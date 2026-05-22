@@ -37,7 +37,7 @@ Set a document-level offset to shift all headings at once:
 ```yaml
 extensions:
   offset-headings:
-    offset-headings-by: 1
+    by: 1
 ```
 
 ### Offset a single heading
@@ -58,10 +58,10 @@ Negative values pull a heading up:
 
 ### Offset a heading and its descendants
 
-Set `offset-headings-recursive` to `true` to cascade the same offset to every nested heading:
+Cascading is on by default: the same offset flows to every nested heading below the attributed one.
 
 ```markdown
-## Section {offset-headings-by="1" offset-headings-recursive="true"}
+## Section {offset-headings-by="1"}
 
 ### Subsection
 ```
@@ -69,20 +69,32 @@ Set `offset-headings-recursive` to `true` to cascade the same offset to every ne
 Both headings shift by 1.
 Cascading stops as soon as a heading at or above the original level of the attributed heading is reached.
 
+Set `offset-headings-recursive` to `false` to limit the offset to the attributed heading alone:
+
+```markdown
+## Section {offset-headings-by="1" offset-headings-recursive="false"}
+
+### Subsection
+```
+
+Only the first heading shifts; the subsection keeps its level.
+The document-level `recursive` option sets this default for every heading that omits the attribute.
+
 The document-level offset and per-heading offsets combine: a heading receives the document offset plus any offset from its attribute or an active recursive cascade.
 
 ## Configuration
 
-| Option              | Type    | Default | Description                                              |
-| ------------------- | ------- | ------- | -------------------------------------------------------- |
-| `offset-headings-by` | integer | `0`     | Document-level offset applied to every heading. Clamped to `[1, 6]`. |
+| Option      | Type    | Default | Description                                                                          |
+| ----------- | ------- | ------- | ------------------------------------------------------------------------------------ |
+| `by`        | integer | `0`     | Document-level offset applied to every heading. Resulting level clamped to `[1, 6]`. |
+| `recursive` | boolean | `true`  | Default cascade behaviour for per-heading offsets when the attribute is omitted.     |
 
 ### Attributes
 
-| Attribute                   | Type    | Default | Description                                                            |
-| --------------------------- | ------- | ------- | ---------------------------------------------------------------------- |
-| `offset-headings-by`        | integer | -       | Offset added to this heading. Clamped to `[1, 6]`.                     |
-| `offset-headings-recursive` | boolean | `false` | When true, cascade the offset to every nested heading below this one.  |
+| Attribute                   | Type    | Default     | Description                                                           |
+| --------------------------- | ------- | ----------- | --------------------------------------------------------------------- |
+| `offset-headings-by`        | integer | -           | Offset added to this heading. Resulting level clamped to `[1, 6]`.    |
+| `offset-headings-recursive` | boolean | `recursive` | When true, cascade the offset to every nested heading below this one. |
 
 ## Example
 
