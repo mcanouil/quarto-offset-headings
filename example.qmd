@@ -18,21 +18,18 @@ format:
 format-links:
   - html
   - typst
+number-sections: true
 filters:
   - offset-headings
 ---
 
 ## Untouched Heading
 
-This heading has no attribute and keeps its original level.
+This heading has no attribute, so it keeps its level and its section number whether or not the filter runs.
 
 ## Shifted Heading {offset-headings-by="1"}
 
 This level-2 heading becomes a level-3 heading; the surrounding headings keep their original levels.
-
-## Pulled-up Heading {offset-headings-by="-1"}
-
-This level-2 heading becomes a level-1 heading.
 
 ## Recursive Cascade {offset-headings-by="1"}
 
@@ -46,9 +43,11 @@ This level-3 heading becomes a level-4 heading.
 
 This level-4 heading becomes a level-5 heading.
 
-## Back to Normal
+## Pull a Subsection Up
 
-This heading at the original base level stops the cascade and stays at level 2.
+### Pulled-up Subsection {offset-headings-by="-1"}
+
+This level-3 heading becomes a level-2 heading, joining the top level instead of nesting.
 
 ## Non-recursive Shift {offset-headings-by="1" offset-headings-recursive="false"}
 
