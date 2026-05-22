@@ -93,7 +93,7 @@ The document-level offset and per-heading offsets combine: a heading receives th
 
 | Attribute                   | Type    | Default     | Description                                                           |
 | --------------------------- | ------- | ----------- | --------------------------------------------------------------------- |
-| `offset-headings-by`        | integer | -           | Offset added to this heading. Resulting level clamped to `[1, 6]`.    |
+| `offset-headings-by`        | integer | `0`         | Offset added to this heading. Resulting level clamped to `[1, 6]`.    |
 | `offset-headings-recursive` | boolean | `recursive` | When true, cascade the offset to every nested heading below this one. |
 
 ## Example

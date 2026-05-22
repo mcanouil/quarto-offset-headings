@@ -27,6 +27,7 @@ attributes:
   Header:
     offset-headings-by:
       type: integer
+      default: 0
       title: Per-heading offset
       description: "Amount added to this heading level; positive values push it deeper, negative values pull it up, and the resulting level is clamped to the range 1 to 6."
       examples:
