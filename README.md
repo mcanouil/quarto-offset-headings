@@ -103,3 +103,4 @@ Here is the source code for a minimal example: [example.qmd](example.qmd).
 Rendered output:
 
 - [HTML](https://m.canouil.dev/quarto-offset-headings/).
+- [Typst](https://m.canouil.dev/quarto-offset-headings/example-typst.pdf).

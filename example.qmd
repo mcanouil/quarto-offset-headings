@@ -1,8 +1,23 @@
 ---
 title: "Offset Headings"
 subtitle: "Quarto Extension"
-author: "Mickaël Canouil"
-format: html
+author:
+  - name: "Mickaël CANOUIL, _Ph.D._"
+    orcid: "0000-0002-3396-4549"
+    url: "https://mickael.canouil.fr"
+format:
+  html:
+    output-file: index
+    embed-resources: true
+  typst:
+    output-file: example-typst
+    papersize: a4
+    margin:
+      x: 2.5cm
+      y: 2.5cm
+format-links:
+  - html
+  - typst
 filters:
   - offset-headings
 ---
@@ -19,9 +34,9 @@ This level-2 heading becomes a level-3 heading; the surrounding headings keep th
 
 This level-2 heading becomes a level-1 heading.
 
-## Recursive Cascade {offset-headings-by="1" offset-headings-recursive="true"}
+## Recursive Cascade {offset-headings-by="1"}
 
-Both this heading and its nested headings shift by 1.
+Cascading is on by default, so this heading and its nested headings all shift by 1.
 
 ### Nested Heading
 
@@ -34,3 +49,11 @@ This level-4 heading becomes a level-5 heading.
 ## Back to Normal
 
 This heading at the original base level stops the cascade and stays at level 2.
+
+## Non-recursive Shift {offset-headings-by="1" offset-headings-recursive="false"}
+
+This level-2 heading becomes a level-3 heading, but its nested heading is left untouched.
+
+### Untouched Nested Heading
+
+This level-3 heading keeps its original level.
