@@ -5,19 +5,21 @@
 # Configured in _quarto.yml, _metadata.yml, or document front matter:
 #   extensions:
 #     offset-headings:
-#       enabled: true
+#       offset-headings-by: 1
 options:
-  enabled:
-    type: boolean
-    default: true
-    description: "Enable or disable the offset-headings filter."
+  offset-headings-by:
+    type: integer
+    default: 0
+    description: "Amount added to every heading level in the document. Positive values push headings deeper; negative values pull them up. The result is clamped to [1, 6]."
 
-# Element attributes accepted by the filter on Pandoc elements.
-# Group keys: CSS class name, ID prefix, element type (Div, Span, Code,
-# CodeBlock, Header), or _any for all elements.
-# Used in: [text]{.offset-headings attr=value} or ::: {.offset-headings attr=value}
+# Element attributes accepted by the filter on Header elements.
+# Used in: ## Section {offset-headings-by="1" offset-headings-recursive="true"}
 element-attributes:
-  offset-headings:
-    example-attr:
-      type: string
-      description: "An example attribute for the offset-headings filter."
+  Header:
+    offset-headings-by:
+      type: integer
+      description: "Amount added to this heading level. Positive values push the heading deeper; negative values pull it up. The result is clamped to [1, 6]."
+    offset-headings-recursive:
+      type: boolean
+      default: false
+      description: "When true, every following descendant heading receives the same offset until a sibling or ancestor heading stops the cascade."

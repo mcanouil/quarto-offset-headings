@@ -7,39 +7,30 @@ filters:
   - offset-headings
 ---
 
-## Basic Usage
+## Untouched Heading
 
-Apply the filter using the `offset-headings` class:
+This heading has no attribute and keeps its original level.
 
-::: {.offset-headings}
-This content will be processed by the filter.
-:::
+## Shifted Heading {offset-headings-by="1"}
 
-## With Options
+This level-2 heading becomes a level-3 heading; the surrounding headings keep their original levels.
 
-Pass options as attributes:
+## Pulled-up Heading {offset-headings-by="-1"}
 
-::: {.offset-headings option1="value1"}
-This content has custom options applied.
-:::
+This level-2 heading becomes a level-1 heading.
 
-## Multiple Options
+## Recursive Cascade {offset-headings-by="1" offset-headings-recursive="true"}
 
-Combine multiple options:
+Both this heading and its nested headings shift by 1.
 
-::: {.offset-headings option1="value1" option2="value2"}
-This content has multiple options applied.
-:::
+### Nested Heading
 
-## Nested Content
+This level-3 heading becomes a level-4 heading.
 
-The filter handles nested content:
+#### Deeper Heading
 
-::: {.offset-headings}
-### Heading Inside Filter
+This level-4 heading becomes a level-5 heading.
 
-- List item 1.
-- List item 2.
+## Back to Normal
 
-Paragraph with **bold** and *italic* text.
-:::
+This heading at the original base level stops the cascade and stays at level 2.
