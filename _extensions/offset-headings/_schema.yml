@@ -1,25 +1,39 @@
-# _schema.yml for "offset-headings" filter extension
-# Describes options and element attributes for IDE tooling and runtime validation.
+# Schema for the offset-headings extension
+$schema: https://m.canouil.dev/quarto-wizard/assets/schema/v2/extension-schema.json
 
-# Extension-level metadata options.
-# Configured in _quarto.yml, _metadata.yml, or document front matter:
+# Document-level options, configured under:
 #   extensions:
 #     offset-headings:
-#       offset-headings-by: 1
+#       by: 1
+#       recursive: true
 options:
-  offset-headings-by:
+  by:
     type: integer
     default: 0
-    description: "Amount added to every heading level in the document. Positive values push headings deeper; negative values pull them up. The result is clamped to [1, 6]."
+    title: Document heading offset
+    description: "Amount added to every heading level in the document; the resulting level is clamped to the range 1 to 6."
+    examples:
+      - 1
+      - -1
+  recursive:
+    type: boolean
+    default: true
+    title: Default cascade behaviour
+    description: "Default cascade behaviour for per-heading offsets, used when a heading omits the offset-headings-recursive attribute."
 
-# Element attributes accepted by the filter on Header elements.
-# Used in: ## Section {offset-headings-by="1" offset-headings-recursive="true"}
-element-attributes:
+# Attributes accepted on Header elements, e.g.:
+#   ## Section {offset-headings-by="1" offset-headings-recursive="false"}
+attributes:
   Header:
     offset-headings-by:
       type: integer
-      description: "Amount added to this heading level. Positive values push the heading deeper; negative values pull it up. The result is clamped to [1, 6]."
+      title: Per-heading offset
+      description: "Amount added to this heading level; positive values push it deeper, negative values pull it up, and the resulting level is clamped to the range 1 to 6."
+      examples:
+        - 1
+        - -1
     offset-headings-recursive:
       type: boolean
-      default: false
-      description: "When true, every following descendant heading receives the same offset until a sibling or ancestor heading stops the cascade."
+      default: true
+      title: Cascade to descendants
+      description: "When true, the offset cascades to every descendant heading until a sibling or ancestor stops it; defaults to the document-level recursive option."
