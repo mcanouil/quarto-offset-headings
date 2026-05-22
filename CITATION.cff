@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+title: "Offset Headings Extension for Quarto"
+message: "If you use this project, please cite it as below."
+type: software
+authors:
+  - name: "Mickaël Canouil"
+repository-code: "https://github.com/mcanouil/quarto-offset-headings"
+url: "https://mcanouil.github.io/quarto-offset-headings/"
+license: "MIT License"
+date-released: "2026-05-22"
+version: 0.0.0
