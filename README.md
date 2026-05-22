@@ -4,6 +4,14 @@ A Quarto extension that offsets heading levels by a positive or negative amount,
 
 Use it to shift a single heading, an entire heading subtree, or every heading in a document, without depending on a format-specific option.
 
+## Motivation
+
+Quarto and Pandoc already expose a `shift-heading-level-by` option, but it runs as a final post-processing pass over the whole document.
+Because it applies after every Lua filter has finished, other extensions cannot see or react to the shifted levels, and you cannot target an individual heading or branch of the document.
+
+This extension runs as a Lua filter instead.
+Heading offsets are resolved during filtering, so they compose with other filter-based extensions, and you can offset a single heading, a subtree, or the entire document with per-heading control rather than one blanket value.
+
 ## Installation
 
 ```bash
