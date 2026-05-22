@@ -3,7 +3,6 @@
 --- @license MIT License
 --- @copyright 2026 Mickaël Canouil
 --- @author Mickaël Canouil
---- @version 0.0.0
 --- @brief Offset heading levels by a positive or negative amount, format-agnostic.
 --- @description
 ---   Adjusts heading levels anywhere in a document, in any output format.
