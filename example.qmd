@@ -56,3 +56,23 @@ This level-2 heading becomes a level-3 heading, but its nested heading is left u
 ### Untouched Nested Heading
 
 This level-3 heading keeps its original level.
+
+## Capped Shift {offset-headings-by="3" offset-headings-max-level="4"}
+
+A `by` of 3 would push this level-2 heading to level 5, but `max-level` of 4 caps it at level 4.
+
+### Capped Nested Heading
+
+This level-3 heading would become level 6 through the cascade, but the cap holds it at level 4 as well.
+
+## Bounded Cascade {offset-headings-by="1" offset-headings-depth="1"}
+
+This level-2 heading becomes a level-3 heading, and the cascade reaches only one level of descendants.
+
+### Cascaded Nested Heading
+
+This level-3 heading is within the cascade depth, so it becomes a level-4 heading.
+
+#### Beyond the Cascade Depth
+
+This level-4 heading is beyond the cascade depth limit, so it keeps its original level.
