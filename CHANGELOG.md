@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0 (2026-05-24)
+
 ### New Features
 
 - feat: Add `offset-headings-max-level` attribute and `extensions.offset-headings.max-level` option to cap how deep a positive offset may push a heading.
