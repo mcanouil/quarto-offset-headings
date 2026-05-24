@@ -115,21 +115,21 @@ The document-level `depth` option sets this default for every heading that omits
 
 ## Configuration
 
-| Option          | Type    | Default | Description                                                                                              |
-| --------------- | ------- | ------- | -------------------------------------------------------------------------------------------------------- |
-| `by`            | integer | `0`     | Document-level offset applied to every heading. Resulting level clamped to `[1, 6]`.                     |
-| `recursive`     | boolean | `true`  | Default cascade behaviour for per-heading offsets when the attribute is omitted.                         |
-| `max-level`     | integer | `6`     | Default deepest level a positive offset may reach when the attribute is omitted. Global `[1, 6]` applies. |
-| `depth`         | integer | `0`     | Default cascade depth limit when the attribute is omitted. `0` means unlimited depth.                    |
+| Option      | Type    | Default | Description                                                                                               |
+| ----------- | ------- | ------- | --------------------------------------------------------------------------------------------------------- |
+| `by`        | integer | `0`     | Document-level offset applied to every heading. Resulting level clamped to `[1, 6]`.                      |
+| `recursive` | boolean | `true`  | Default cascade behaviour for per-heading offsets when the attribute is omitted.                          |
+| `max-level` | integer | `6`     | Default deepest level a positive offset may reach when the attribute is omitted. Global `[1, 6]` applies. |
+| `depth`     | integer | `0`     | Default cascade depth limit when the attribute is omitted. `0` means unlimited depth.                     |
 
 ### Attributes
 
-| Attribute                       | Type    | Default         | Description                                                                                             |
-| ------------------------------- | ------- | --------------- | ------------------------------------------------------------------------------------------------------- |
-| `offset-headings-by`            | integer | `0`             | Offset added to this heading. Resulting level clamped to `[1, 6]`.                                      |
-| `offset-headings-recursive`     | boolean | `recursive`     | When true, cascade the offset to every nested heading below this one.                                  |
-| `offset-headings-max-level`     | integer | `max-level`     | Caps how deep this heading may be pushed by a positive offset. Global `[1, 6]` still applies.          |
-| `offset-headings-depth`         | integer | `depth`         | Bounds how many descendant levels inherit the cascade. `0` means unlimited depth.                      |
+| Attribute                   | Type    | Default     | Description                                                                                   |
+| --------------------------- | ------- | ----------- | --------------------------------------------------------------------------------------------- |
+| `offset-headings-by`        | integer | `0`         | Offset added to this heading. Resulting level clamped to `[1, 6]`.                            |
+| `offset-headings-recursive` | boolean | `recursive` | When true, cascade the offset to every nested heading below this one.                         |
+| `offset-headings-max-level` | integer | `max-level` | Caps how deep this heading may be pushed by a positive offset. Global `[1, 6]` still applies. |
+| `offset-headings-depth`     | integer | `depth`     | Bounds how many descendant levels inherit the cascade. `0` means unlimited depth.             |
 
 ## Example
 
