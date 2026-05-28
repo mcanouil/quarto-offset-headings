@@ -25,8 +25,10 @@
 ---
 ---     - `max-level` (integer, default 6): deepest level a heading may be
 ---       pushed to by a positive offset, used when a heading omits the
----       `offset-headings-max-level` attribute. The global range [1, 6] still
----       applies.
+---       `offset-headings-max-level` attribute. Values outside [1, 6] are
+---       clamped and a warning is emitted. The cap applies to the combined
+---       level (document offset + per-heading offset), not to the per-heading
+---       offset alone.
 ---
 ---     - `depth` (integer, default 0): default limit on how many descendant
 ---       heading levels inherit a cascading offset, used when a heading omits
@@ -47,9 +49,10 @@
 ---       carrying the attribute is offset.
 ---
 ---     - `offset-headings-max-level` (integer, optional, defaults to the
----       document-level `max-level` option): caps how deep this heading may be
----       pushed by a positive offset. The result never goes below this level,
----       and the global range [1, 6] still applies.
+---       document-level `max-level` option): caps the combined heading level
+---       (document offset + this heading's offset). The result never goes
+---       below this level, and the global range [1, 6] still applies. Values
+---       outside [1, 6] are clamped and a warning is emitted.
 ---
 ---     - `offset-headings-depth` (integer, optional, defaults to the
 ---       document-level `depth` option): bounds how many descendant heading
@@ -137,6 +140,24 @@ local function parse_offset(raw)
   return math.floor(value)
 end
 
+--- Clamp a max-level value to [MIN_LEVEL, MAX_LEVEL] and warn when out of range.
+--- @param value number The desired max-level.
+--- @param source string Human-readable source label (option or attribute name).
+--- @return number The value clamped to the global heading range.
+local function clamp_max_level_with_warning(value, source)
+  if value < MIN_LEVEL or value > MAX_LEVEL then
+    local clamped = math.max(MIN_LEVEL, math.min(MAX_LEVEL, value))
+    log.log_warning(
+      EXTENSION_NAME,
+      'Clamping "' .. source .. '" value ' .. tostring(value)
+        .. ' to ' .. tostring(clamped)
+        .. ' (must be in the range [' .. MIN_LEVEL .. ', ' .. MAX_LEVEL .. ']).'
+    )
+    return clamped
+  end
+  return value
+end
+
 --- Parse a string into a boolean (default false).
 --- @param raw string|nil The raw attribute value.
 --- @return boolean True when the value is a truthy token.
@@ -177,6 +198,9 @@ local function read_metadata(meta)
   if raw_max_level ~= nil and max_level == nil then
     log.log_warning(EXTENSION_NAME, 'Ignoring non-integer "' .. MAX_LEVEL_OPTION .. '": "' .. raw_max_level .. '".')
     max_level = MAX_LEVEL
+  end
+  if max_level ~= nil then
+    max_level = clamp_max_level_with_warning(max_level, MAX_LEVEL_OPTION)
   end
   document_max_level = max_level or MAX_LEVEL
 
@@ -235,7 +259,7 @@ local function process_pandoc(doc)
               'Ignoring non-integer "' .. MAX_LEVEL_ATTRIBUTE .. '": "' .. raw_max_level .. '".'
             )
           else
-            max_level = parsed_max_level
+            max_level = clamp_max_level_with_warning(parsed_max_level, MAX_LEVEL_ATTRIBUTE)
           end
         end
         header.attributes[MAX_LEVEL_ATTRIBUTE] = nil

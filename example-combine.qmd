@@ -1,0 +1,65 @@
+---
+title: "Offset Headings — Combined Rules"
+subtitle: "Document-level offset combined with per-heading offsets, max-level cap, and cascade depth"
+author:
+  - name: "Mickaël CANOUIL, _Ph.D._"
+    orcid: "0000-0002-3396-4549"
+    url: "https://mickael.canouil.fr"
+format:
+  html:
+    output-file: example-combine
+    embed-resources: true
+  typst:
+    output-file: example-combine-typst
+    papersize: a4
+    margin:
+      x: 2.5cm
+      y: 2.5cm
+format-links:
+  - html
+  - typst
+number-sections: true
+filters:
+  - offset-headings
+extensions:
+  offset-headings:
+    by: 1
+---
+
+This fixture exercises the rules that combine the document-level offset with per-heading offsets, with the cap on the deepest reachable level, and with the cascade depth limit.
+
+## Document-only Shift
+
+This level-2 heading has no attribute, so it receives the document-level offset only.
+It renders as a level-3 heading because `extensions.offset-headings.by` is `1`.
+
+## Per-heading Addition {offset-headings-by="1"}
+
+This level-2 heading combines the document offset (`1`) and its per-heading offset (`1`).
+It renders as a level-4 heading.
+
+### Cascaded Subsection
+
+This level-3 heading inherits the active cascade, so it also receives `1 + 1`.
+It renders as a level-5 heading.
+
+## Negative Per-heading Cancels Document Offset {offset-headings-by="-1"}
+
+The document offset (`1`) and the per-heading offset (`-1`) cancel.
+This level-2 heading stays at level 2.
+
+## Capped Combined Level {offset-headings-by="2" offset-headings-max-level="4" offset-headings-depth="1"}
+
+Without the cap, this level-2 heading would become a level-5 heading (`2 + 1 + 2`).
+The `max-level` of `4` caps the combined level, so it renders as level 4.
+
+### Cascaded and Capped Subsection
+
+This level-3 heading is inside the cascade depth limit of `1`.
+Without the cap it would become a level-6 heading (`3 + 1 + 2`).
+The cap holds it at level 4.
+
+#### Beyond the Cascade Depth
+
+This level-4 heading is beyond the per-heading cascade depth.
+It only receives the document offset and renders as level 5.

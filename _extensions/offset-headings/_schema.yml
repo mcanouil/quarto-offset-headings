@@ -25,8 +25,10 @@ options:
   max-level:
     type: integer
     default: 6
+    minimum: 1
+    maximum: 6
     title: Default maximum target level
-    description: "Deepest level a heading may be pushed to by a positive offset, used when a heading omits the offset-headings-max-level attribute; the global range 1 to 6 still applies."
+    description: "Deepest level a heading may be pushed to by a positive offset, used when a heading omits the offset-headings-max-level attribute; values outside the range 1 to 6 are clamped and a warning is emitted."
     examples:
       - 4
       - 6
@@ -59,8 +61,10 @@ attributes:
     offset-headings-max-level:
       type: integer
       default: 6
+      minimum: 1
+      maximum: 6
       title: Maximum target level
-      description: "Caps how deep this heading may be pushed by a positive offset; the resulting level never goes below this value and the global range 1 to 6 still applies. Defaults to the document-level max-level option."
+      description: "Caps the combined heading level (document offset + this heading's offset); the resulting level never goes below this value and the global range 1 to 6 still applies. Values outside 1 to 6 are clamped and a warning is emitted. Defaults to the document-level max-level option."
       examples:
         - 4
         - 6
