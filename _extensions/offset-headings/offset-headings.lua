@@ -146,7 +146,7 @@ end
 --- @return number The value clamped to the global heading range.
 local function clamp_max_level_with_warning(value, source)
   if value < MIN_LEVEL or value > MAX_LEVEL then
-    local clamped = math.max(MIN_LEVEL, math.min(MAX_LEVEL, value))
+    local clamped = clamp_level(value)
     log.log_warning(
       EXTENSION_NAME,
       'Clamping "' .. source .. '" value ' .. tostring(value)
