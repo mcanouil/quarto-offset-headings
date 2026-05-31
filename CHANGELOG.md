@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.1 (2026-05-31)
+
 ### Bug Fixes
 
 - fix: Warn and clamp when `max-level` (document option or per-heading attribute) is outside the global heading range `[1, 6]` instead of silently clamping.
