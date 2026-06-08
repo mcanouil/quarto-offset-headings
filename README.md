@@ -17,7 +17,7 @@ Heading offsets are resolved during filtering, so they compose with other filter
 ## Installation
 
 ```bash
-quarto add mcanouil/quarto-offset-headings@0.2.1
+quarto add mcanouil/quarto-offset-headings@0.2.2
 ```
 
 This will install the extension under the `_extensions` subdirectory.
