@@ -4,4 +4,5 @@ version: 0.2.1
 quarto-required: ">=1.6"
 contributes:
   filters:
-    - offset-headings.lua
+    - path: offset-headings.lua
+      at: pre-ast

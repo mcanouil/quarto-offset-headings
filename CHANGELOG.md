@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- fix: move lua filter to pre-ast to ensure it runs before any filters (e.g., `cascade`).
+
 ## 0.2.1 (2026-05-31)
 
 ### Bug Fixes
