@@ -35,6 +35,15 @@
 ---       the `offset-headings-depth` attribute. A value of 0 means unlimited
 ---       depth.
 ---
+---     - `quarto-shift` ("auto", integer, or false; default "auto"): the
+---       `shift-heading-level-by` Quarto applies to the output after every Lua
+---       filter has run. Quarto sets it to -1 for Typst, and for PDF/LaTeX when
+---       `number-sections` is on, whenever the document has no level-1 heading.
+---       Pandoc applies that shift after this filter, so the filter compensates
+---       for it to keep heading levels identical across formats. "auto" detects
+---       Quarto's rule; an integer states the shift explicitly; `false` (or 0)
+---       disables the compensation.
+---
 ---   Per-heading attributes (override or supplement the document-level offset):
 ---
 ---     - `offset-headings-by` (integer, required on the heading): amount added
@@ -85,6 +94,7 @@ local OFFSET_OPTION = 'by'
 local RECURSIVE_OPTION = 'recursive'
 local MAX_LEVEL_OPTION = 'max-level'
 local DEPTH_OPTION = 'depth'
+local QUARTO_SHIFT_OPTION = 'quarto-shift'
 
 --- Per-heading attribute keys (shared flat attribute namespace, kept prefixed).
 local OFFSET_ATTRIBUTE = 'offset-headings-by'
@@ -98,6 +108,9 @@ local MAX_LEVEL = 6
 --- A cascade depth of 0 means unlimited descendant levels inherit the offset.
 local UNLIMITED_CASCADE_DEPTH = 0
 
+--- The shift Quarto applies to Typst and PDF/LaTeX output on its own.
+local QUARTO_AUTOMATIC_SHIFT = -1
+
 --- Document-level offset applied to every heading.
 local document_offset = 0
 
@@ -109,6 +122,9 @@ local document_max_level = MAX_LEVEL
 
 --- Document-level default for the cascade depth limit.
 local document_cascade_depth = UNLIMITED_CASCADE_DEPTH
+
+--- Shift Quarto applies after this filter, or nil to detect it automatically.
+local document_quarto_shift = nil
 
 --- Clamp a heading level to the valid Pandoc range [1, 6].
 --- @param level number The desired heading level.
@@ -211,7 +227,74 @@ local function read_metadata(meta)
     cascade_depth = UNLIMITED_CASCADE_DEPTH
   end
   document_cascade_depth = cascade_depth or UNLIMITED_CASCADE_DEPTH
+
+  -- A bare YAML `false` arrives as a Lua boolean, so read it from the config
+  -- table directly for the same reason as `recursive` above.
+  document_quarto_shift = nil
+  local raw_quarto_shift = config and config[QUARTO_SHIFT_OPTION]
+  if raw_quarto_shift ~= nil then
+    if type(raw_quarto_shift) == 'boolean' then
+      -- `false` disables the compensation; `true` keeps the automatic detection.
+      if not raw_quarto_shift then
+        document_quarto_shift = 0
+      end
+    else
+      local value = pandoc.utils.stringify(raw_quarto_shift)
+      if value ~= 'auto' then
+        document_quarto_shift = parse_offset(value)
+        if document_quarto_shift == nil then
+          log.log_warning(
+            EXTENSION_NAME,
+            'Ignoring "' .. QUARTO_SHIFT_OPTION .. '": "' .. value .. '"'
+              .. ' (expected "auto", an integer, or false).'
+          )
+        end
+      end
+    end
+  end
+
   return meta
+end
+
+--- Check whether the document already contains a level-1 heading.
+--- Quarto runs the same test on the source markdown to decide whether to shift.
+--- @param blocks pandoc.Blocks The document blocks, before any level is changed.
+--- @return boolean True when at least one level-1 heading is present.
+local function has_level_one_heading(blocks)
+  local found = false
+  blocks:walk({
+    Header = function(header)
+      if header.level == MIN_LEVEL then
+        found = true
+      end
+    end,
+  })
+  return found
+end
+
+--- Predict the "shift-heading-level-by" Quarto applies to this output.
+--- Quarto sets it for Typst, and for PDF/LaTeX with numbered sections and no
+--- explicit top-level division, whenever the document has no level-1 heading.
+--- Pandoc applies the shift after every Lua filter, so it is invisible here and
+--- has to be predicted rather than read.
+--- @param doc pandoc.Pandoc The full document, before any level is changed.
+--- @return number The shift Quarto applies, or 0 when it applies none.
+local function detect_quarto_shift(doc)
+  local applies
+  if quarto.doc.is_format('typst') then
+    applies = true
+  elseif quarto.doc.is_format('latex') and not quarto.doc.is_format('beamer') then
+    local writer_options = PANDOC_WRITER_OPTIONS or {}
+    applies = writer_options.number_sections == true
+      and writer_options.top_level_division == 'top-level-default'
+  else
+    applies = false
+  end
+
+  if not applies or has_level_one_heading(doc.blocks) then
+    return 0
+  end
+  return QUARTO_AUTOMATIC_SHIFT
 end
 
 --- Offset heading levels across the whole document in reading order.
@@ -230,6 +313,40 @@ local function process_pandoc(doc)
     cascade_base_level = nil
     cascade_max_level = nil
     cascade_depth = nil
+  end
+
+  local quarto_shift = document_quarto_shift or detect_quarto_shift(doc)
+  local compensation = -quarto_shift
+  local shift_warning_shown = false
+  local overflow_warning_shown = false
+
+  --- Turn an intended heading level into the level to write in the AST.
+  --- Every clamp stays in intended-level space; the compensation is added last
+  --- so that Quarto's own shift lands the heading on the intended level.
+  --- @param target number The intended final heading level.
+  --- @return number The level to store on the heading.
+  local function emit_level(target)
+    local level = target + compensation
+    if compensation ~= 0 and not shift_warning_shown then
+      log.log_warning(
+        EXTENSION_NAME,
+        'Quarto applies "shift-heading-level-by: ' .. tostring(quarto_shift) .. '" to this '
+          .. FORMAT .. ' output after this filter runs; heading levels were compensated by '
+          .. string.format('%+d', compensation) .. ' so the output matches other formats.'
+          .. ' Set "' .. QUARTO_SHIFT_OPTION .. '" to override, or "shift-heading-level-by: 0"'
+          .. ' in the front matter to disable Quarto\'s automatic shift.'
+      )
+      shift_warning_shown = true
+    end
+    if level > MAX_LEVEL and not overflow_warning_shown then
+      log.log_warning(
+        EXTENSION_NAME,
+        'Compensating for Quarto\'s heading shift pushes a heading to level ' .. tostring(level)
+          .. ' before the shift is applied; formats other than Typst may not render it as a heading.'
+      )
+      overflow_warning_shown = true
+    end
+    return level
   end
 
   doc.blocks = doc.blocks:walk({
@@ -284,10 +401,10 @@ local function process_pandoc(doc)
             EXTENSION_NAME,
             'Ignoring non-integer "' .. OFFSET_ATTRIBUTE .. '": "' .. raw_offset .. '".'
           )
-          header.level = clamp_level(original_level + document_offset)
+          header.level = emit_level(clamp_level(original_level + document_offset))
           clear_cascade()
         else
-          header.level = clamp_level_to_max(original_level + document_offset + offset, max_level)
+          header.level = emit_level(clamp_level_to_max(original_level + document_offset + offset, max_level))
           if recursive then
             cascade_offset = offset
             cascade_base_level = original_level
@@ -300,17 +417,17 @@ local function process_pandoc(doc)
       elseif cascade_offset ~= nil and original_level <= cascade_base_level then
         -- Sibling or ancestor: stop cascading and apply only the document offset.
         clear_cascade()
-        header.level = clamp_level(original_level + document_offset)
+        header.level = emit_level(clamp_level(original_level + document_offset))
       elseif cascade_offset ~= nil
         and cascade_depth ~= UNLIMITED_CASCADE_DEPTH
         and (original_level - cascade_base_level) > cascade_depth then
         -- Deeper than the cascade depth limit: apply only the document offset.
-        header.level = clamp_level(original_level + document_offset)
+        header.level = emit_level(clamp_level(original_level + document_offset))
       elseif cascade_offset ~= nil then
         -- Descendant within the active cascade: apply document and cascade offsets.
-        header.level = clamp_level_to_max(original_level + document_offset + cascade_offset, cascade_max_level)
+        header.level = emit_level(clamp_level_to_max(original_level + document_offset + cascade_offset, cascade_max_level))
       else
-        header.level = clamp_level(original_level + document_offset)
+        header.level = emit_level(clamp_level(original_level + document_offset))
       end
 
       return header

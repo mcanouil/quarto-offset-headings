@@ -40,6 +40,15 @@ options:
     examples:
       - 0
       - 1
+  quarto-shift:
+    type: [string, integer, boolean]
+    default: auto
+    title: Shift Quarto applies after this filter
+    description: "The shift-heading-level-by Quarto applies to the output after every Lua filter has run; Quarto sets it to -1 for Typst, and for PDF/LaTeX with number-sections, whenever the document has no level-1 heading. Use auto to detect it, an integer to state it explicitly, or false (or 0) to disable the compensation."
+    examples:
+      - auto
+      - 0
+      - -1
 
 # Attributes accepted on Header elements, e.g.:
 #   ## Section {offset-headings-by="1" offset-headings-recursive="false"}

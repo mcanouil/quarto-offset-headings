@@ -174,23 +174,52 @@ The attributed heading becomes a level-4 heading: original (2) + document offset
 The subsection is within the cascade depth (`depth=1`), so it would become a level-5 heading (3 + 1 + 2), and the cap holds it at level 4.
 The sub-subsection is beyond the cascade depth, so it only receives the document offset and becomes a level-5 heading (4 + 1).
 
+### Interaction with Quarto's automatic heading shift
+
+Quarto sets `shift-heading-level-by: -1` on its own whenever a document has no level-1 heading:
+
+- for Typst, always.
+- for PDF/LaTeX, when `number-sections` is on and `top-level-division` is not set.
+
+Pandoc applies that shift _after_ every Lua filter has run, so it lands on top of the levels this extension produces.
+Left alone it makes Typst and PDF headings one level shallower than in HTML, and it destroys any heading the filter left at level 1: the first one replaces the document title, the others become plain paragraphs.
+
+The filter therefore detects the shift and compensates for it, so a heading ends at the same level in every format.
+Use `quarto-shift` to change this:
+
+```yaml
+extensions:
+  offset-headings:
+    quarto-shift: 0
+```
+
+`auto` (the default) detects Quarto's rule, an integer states the shift explicitly, and `false` (or `0`) turns the compensation off.
+A warning is emitted whenever the filter compensates, naming the shift it assumed.
+
+Two limitations are worth knowing:
+
+- A `shift-heading-level-by` you set yourself is invisible to Lua filters, so the detection cannot see it.
+  Declare the same value through `quarto-shift`, or set `shift-heading-level-by: 0` to remove the shift altogether.
+- AsciiDoc books shift the headings of child pages by `-1`; the filter cannot tell a child page from any other document, so set `quarto-shift: -1` there.
+
 ## Configuration
 
-| Option      | Type    | Default | Description                                                                                               |
-| ----------- | ------- | ------- | --------------------------------------------------------------------------------------------------------- |
-| `by`        | integer | `0`     | Document-level offset applied to every heading. Resulting level clamped to `[1, 6]`.                      |
-| `recursive` | boolean | `true`  | Default cascade behaviour for per-heading offsets when the attribute is omitted.                          |
-| `max-level` | integer | `6`     | Default cap on the combined heading level (original + document offset + per-heading offset) when the attribute is omitted. Global `[1, 6]` applies; out-of-range values are clamped with a warning. |
-| `depth`     | integer | `0`     | Default cascade depth limit when the attribute is omitted. `0` means unlimited depth.                     |
+| Option         | Type                        | Default | Description                                                                                                                                                                                         |
+| -------------- | --------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `by`           | integer                     | `0`     | Document-level offset applied to every heading. Resulting level clamped to `[1, 6]`.                                                                                                                |
+| `recursive`    | boolean                     | `true`  | Default cascade behaviour for per-heading offsets when the attribute is omitted.                                                                                                                    |
+| `max-level`    | integer                     | `6`     | Default cap on the combined heading level (original + document offset + per-heading offset) when the attribute is omitted. Global `[1, 6]` applies; out-of-range values are clamped with a warning. |
+| `depth`        | integer                     | `0`     | Default cascade depth limit when the attribute is omitted. `0` means unlimited depth.                                                                                                               |
+| `quarto-shift` | `auto`, integer, or boolean | `auto`  | The `shift-heading-level-by` Quarto applies after this filter runs. `auto` detects it, an integer states it, `false` (or `0`) disables the compensation.                                            |
 
 ### Attributes
 
-| Attribute                   | Type    | Default     | Description                                                                                   |
-| --------------------------- | ------- | ----------- | --------------------------------------------------------------------------------------------- |
-| `offset-headings-by`        | integer | `0`         | Offset added to this heading. Resulting level clamped to `[1, 6]`.                            |
-| `offset-headings-recursive` | boolean | `recursive` | When true, cascade the offset to every nested heading below this one.                         |
+| Attribute                   | Type    | Default     | Description                                                                                                                                                       |
+| --------------------------- | ------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `offset-headings-by`        | integer | `0`         | Offset added to this heading. Resulting level clamped to `[1, 6]`.                                                                                                |
+| `offset-headings-recursive` | boolean | `recursive` | When true, cascade the offset to every nested heading below this one.                                                                                             |
 | `offset-headings-max-level` | integer | `max-level` | Caps the combined heading level (original + document offset + per-heading offset). Global `[1, 6]` still applies; out-of-range values are clamped with a warning. |
-| `offset-headings-depth`     | integer | `depth`     | Bounds how many descendant levels inherit the cascade. `0` means unlimited depth.             |
+| `offset-headings-depth`     | integer | `depth`     | Bounds how many descendant levels inherit the cascade. `0` means unlimited depth.                                                                                 |
 
 ## Example
 
