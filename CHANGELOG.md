@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.4.0 (2026-07-23)
+
 ### Breaking Changes
 
 - feat!: Remove the `quarto-shift` option and the compensation for Quarto's automatic `shift-heading-level-by: -1`. The compensation could not detect an explicit `shift-heading-level-by` and silently produced wrong levels when one was set. The filter now only warns when Quarto's automatic shift can apply, recommending `shift-heading-level-by: 0` in the front matter, which disables the shift at the source.
