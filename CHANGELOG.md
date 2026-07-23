@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.3.0 (2026-07-23)
+
 ### New Features
 
 - feat: Add the `quarto-shift` option to state or disable the `shift-heading-level-by` Quarto applies after the filter runs.
