@@ -35,14 +35,23 @@
 ---       the `offset-headings-depth` attribute. A value of 0 means unlimited
 ---       depth.
 ---
----     - `quarto-shift` ("auto", integer, or false; default "auto"): the
----       `shift-heading-level-by` Quarto applies to the output after every Lua
----       filter has run. Quarto sets it to -1 for Typst, and for PDF/LaTeX when
----       `number-sections` is on, whenever the document has no level-1 heading.
----       Pandoc applies that shift after this filter, so the filter compensates
----       for it to keep heading levels identical across formats. "auto" detects
----       Quarto's rule; an integer states the shift explicitly; `false` (or 0)
----       disables the compensation.
+---     - `quarto-shift-warning` (boolean, default true): whether to warn when
+---       Quarto's automatic heading shift can apply to the output. Set it to
+---       false once `shift-heading-level-by: 0` is in place, since an explicit
+---       `shift-heading-level-by` is invisible to Lua filters.
+---
+---   Interaction with Quarto's automatic heading shift:
+---
+---     Quarto sets `shift-heading-level-by: -1` for Typst, and for PDF/LaTeX
+---     when `number-sections` is on, whenever the document has no level-1
+---     heading and `shift-heading-level-by` is not set explicitly. Pandoc
+---     applies that shift after every Lua filter has run, so this filter can
+---     neither read nor cancel it, and the levels it produces are shifted a
+---     second time. When the filter predicts that Quarto will shift the
+---     output, it warns once and recommends setting
+---     `shift-heading-level-by: 0` explicitly, which disables Quarto's
+---     automatic shift at the source. Once that is in place, silence the
+---     warning with `quarto-shift-warning: false`.
 ---
 ---   Per-heading attributes (override or supplement the document-level offset):
 ---
@@ -94,7 +103,7 @@ local OFFSET_OPTION = 'by'
 local RECURSIVE_OPTION = 'recursive'
 local MAX_LEVEL_OPTION = 'max-level'
 local DEPTH_OPTION = 'depth'
-local QUARTO_SHIFT_OPTION = 'quarto-shift'
+local QUARTO_SHIFT_WARNING_OPTION = 'quarto-shift-warning'
 
 --- Per-heading attribute keys (shared flat attribute namespace, kept prefixed).
 local OFFSET_ATTRIBUTE = 'offset-headings-by'
@@ -108,9 +117,6 @@ local MAX_LEVEL = 6
 --- A cascade depth of 0 means unlimited descendant levels inherit the offset.
 local UNLIMITED_CASCADE_DEPTH = 0
 
---- The shift Quarto applies to Typst and PDF/LaTeX output on its own.
-local QUARTO_AUTOMATIC_SHIFT = -1
-
 --- Document-level offset applied to every heading.
 local document_offset = 0
 
@@ -123,8 +129,8 @@ local document_max_level = MAX_LEVEL
 --- Document-level default for the cascade depth limit.
 local document_cascade_depth = UNLIMITED_CASCADE_DEPTH
 
---- Shift Quarto applies after this filter, or nil to detect it automatically.
-local document_quarto_shift = nil
+--- Whether to warn when Quarto's automatic heading shift can apply.
+local document_quarto_shift_warning = true
 
 --- Clamp a heading level to the valid Pandoc range [1, 6].
 --- @param level number The desired heading level.
@@ -185,6 +191,25 @@ local function parse_boolean(raw)
   return value == 'true' or value == 'yes' or value == '1'
 end
 
+--- Read a boolean option from the extension config table.
+--- A bare YAML boolean arrives as a Lua boolean, and get_metadata_value's
+--- truthiness guard would drop `false`, so the raw config value is read
+--- directly.
+--- @param config table|nil The extension config table.
+--- @param key string The option key.
+--- @param default boolean The value used when the option is absent.
+--- @return boolean The option value.
+local function read_boolean_option(config, key, default)
+  local raw = config and config[key]
+  if raw == nil then
+    return default
+  end
+  if type(raw) == 'boolean' then
+    return raw
+  end
+  return parse_boolean(pandoc.utils.stringify(raw))
+end
+
 --- Read the document-level offset from extension metadata.
 --- @param meta table The document metadata.
 --- @return table The unmodified metadata.
@@ -197,17 +222,8 @@ local function read_metadata(meta)
   end
   document_offset = offset or 0
 
-  -- A bare YAML boolean arrives as a Lua boolean, so read it from the config
-  -- table directly: get_metadata_value's truthiness guard would drop `false`.
   local config = meta_utils.get_extension_config(meta, EXTENSION_NAME)
-  local raw_recursive = config and config[RECURSIVE_OPTION]
-  if raw_recursive ~= nil then
-    if type(raw_recursive) == 'boolean' then
-      document_recursive = raw_recursive
-    else
-      document_recursive = parse_boolean(pandoc.utils.stringify(raw_recursive))
-    end
-  end
+  document_recursive = read_boolean_option(config, RECURSIVE_OPTION, true)
 
   local raw_max_level = meta_utils.get_metadata_value(meta, EXTENSION_NAME, MAX_LEVEL_OPTION)
   local max_level = parse_offset(raw_max_level)
@@ -228,73 +244,31 @@ local function read_metadata(meta)
   end
   document_cascade_depth = cascade_depth or UNLIMITED_CASCADE_DEPTH
 
-  -- A bare YAML `false` arrives as a Lua boolean, so read it from the config
-  -- table directly for the same reason as `recursive` above.
-  document_quarto_shift = nil
-  local raw_quarto_shift = config and config[QUARTO_SHIFT_OPTION]
-  if raw_quarto_shift ~= nil then
-    if type(raw_quarto_shift) == 'boolean' then
-      -- `false` disables the compensation; `true` keeps the automatic detection.
-      if not raw_quarto_shift then
-        document_quarto_shift = 0
-      end
-    else
-      local value = pandoc.utils.stringify(raw_quarto_shift)
-      if value ~= 'auto' then
-        document_quarto_shift = parse_offset(value)
-        if document_quarto_shift == nil then
-          log.log_warning(
-            EXTENSION_NAME,
-            'Ignoring "' .. QUARTO_SHIFT_OPTION .. '": "' .. value .. '"'
-              .. ' (expected "auto", an integer, or false).'
-          )
-        end
-      end
-    end
-  end
+  document_quarto_shift_warning = read_boolean_option(config, QUARTO_SHIFT_WARNING_OPTION, true)
 
   return meta
 end
 
---- Check whether the document already contains a level-1 heading.
---- Quarto runs the same test on the source markdown to decide whether to shift.
---- @param blocks pandoc.Blocks The document blocks, before any level is changed.
---- @return boolean True when at least one level-1 heading is present.
-local function has_level_one_heading(blocks)
-  local found = false
-  blocks:walk({
-    Header = function(header)
-      if header.level == MIN_LEVEL then
-        found = true
-      end
-    end,
-  })
-  return found
-end
-
---- Predict the "shift-heading-level-by" Quarto applies to this output.
---- Quarto sets it for Typst, and for PDF/LaTeX with numbered sections and no
---- explicit top-level division, whenever the document has no level-1 heading.
---- Pandoc applies the shift after every Lua filter, so it is invisible here and
---- has to be predicted rather than read.
---- @param doc pandoc.Pandoc The full document, before any level is changed.
---- @return number The shift Quarto applies, or 0 when it applies none.
-local function detect_quarto_shift(doc)
-  local applies
+--- Check whether Quarto's automatic "shift-heading-level-by: -1" can apply to
+--- this output format. Quarto sets it for Typst, and for PDF/LaTeX with
+--- numbered sections and no explicit top-level division, whenever the document
+--- has no level-1 heading and "shift-heading-level-by" is not set explicitly.
+--- Pandoc applies the shift after every Lua filter, and an explicit
+--- "shift-heading-level-by" is invisible to filters, so the rule can only be
+--- predicted, not read. This mirrors quarto-cli's internal rule
+--- (format-typst.ts, format-pdf.ts) and may need updating when Quarto changes
+--- it.
+--- @return boolean True when this output format is subject to the shift.
+local function quarto_may_shift_format()
   if quarto.doc.is_format('typst') then
-    applies = true
-  elseif quarto.doc.is_format('latex') and not quarto.doc.is_format('beamer') then
+    return true
+  end
+  if quarto.doc.is_format('latex') and not quarto.doc.is_format('beamer') then
     local writer_options = PANDOC_WRITER_OPTIONS or {}
-    applies = writer_options.number_sections == true
+    return writer_options.number_sections == true
       and writer_options.top_level_division == 'top-level-default'
-  else
-    applies = false
   end
-
-  if not applies or has_level_one_heading(doc.blocks) then
-    return 0
-  end
-  return QUARTO_AUTOMATIC_SHIFT
+  return false
 end
 
 --- Offset heading levels across the whole document in reading order.
@@ -315,43 +289,18 @@ local function process_pandoc(doc)
     cascade_depth = nil
   end
 
-  local quarto_shift = document_quarto_shift or detect_quarto_shift(doc)
-  local compensation = -quarto_shift
-  local shift_warning_shown = false
-  local overflow_warning_shown = false
-
-  --- Turn an intended heading level into the level to write in the AST.
-  --- Every clamp stays in intended-level space; the compensation is added last
-  --- so that Quarto's own shift lands the heading on the intended level.
-  --- @param target number The intended final heading level.
-  --- @return number The level to store on the heading.
-  local function emit_level(target)
-    local level = target + compensation
-    if compensation ~= 0 and not shift_warning_shown then
-      log.log_warning(
-        EXTENSION_NAME,
-        'Quarto applies "shift-heading-level-by: ' .. tostring(quarto_shift) .. '" to this '
-          .. FORMAT .. ' output after this filter runs; heading levels were compensated by '
-          .. string.format('%+d', compensation) .. ' so the output matches other formats.'
-          .. ' Set "' .. QUARTO_SHIFT_OPTION .. '" to override, or "shift-heading-level-by: 0"'
-          .. ' in the front matter to disable Quarto\'s automatic shift.'
-      )
-      shift_warning_shown = true
-    end
-    if level > MAX_LEVEL and not overflow_warning_shown then
-      log.log_warning(
-        EXTENSION_NAME,
-        'Compensating for Quarto\'s heading shift pushes a heading to level ' .. tostring(level)
-          .. ' before the shift is applied; formats other than Typst may not render it as a heading.'
-      )
-      overflow_warning_shown = true
-    end
-    return level
-  end
+  --- Quarto decides its automatic shift from the source heading levels, so
+  --- they are tracked here before any offset is applied.
+  local has_heading = false
+  local has_level_one = false
 
   doc.blocks = doc.blocks:walk({
     Header = function(header)
       local original_level = header.level
+      has_heading = true
+      if original_level == MIN_LEVEL then
+        has_level_one = true
+      end
       local raw_offset = header.attributes[OFFSET_ATTRIBUTE]
 
       if raw_offset ~= nil then
@@ -401,10 +350,10 @@ local function process_pandoc(doc)
             EXTENSION_NAME,
             'Ignoring non-integer "' .. OFFSET_ATTRIBUTE .. '": "' .. raw_offset .. '".'
           )
-          header.level = emit_level(clamp_level(original_level + document_offset))
+          header.level = clamp_level(original_level + document_offset)
           clear_cascade()
         else
-          header.level = emit_level(clamp_level_to_max(original_level + document_offset + offset, max_level))
+          header.level = clamp_level_to_max(original_level + document_offset + offset, max_level)
           if recursive then
             cascade_offset = offset
             cascade_base_level = original_level
@@ -417,22 +366,42 @@ local function process_pandoc(doc)
       elseif cascade_offset ~= nil and original_level <= cascade_base_level then
         -- Sibling or ancestor: stop cascading and apply only the document offset.
         clear_cascade()
-        header.level = emit_level(clamp_level(original_level + document_offset))
+        header.level = clamp_level(original_level + document_offset)
       elseif cascade_offset ~= nil
         and cascade_depth ~= UNLIMITED_CASCADE_DEPTH
         and (original_level - cascade_base_level) > cascade_depth then
         -- Deeper than the cascade depth limit: apply only the document offset.
-        header.level = emit_level(clamp_level(original_level + document_offset))
+        header.level = clamp_level(original_level + document_offset)
       elseif cascade_offset ~= nil then
         -- Descendant within the active cascade: apply document and cascade offsets.
-        header.level = emit_level(clamp_level_to_max(original_level + document_offset + cascade_offset, cascade_max_level))
+        header.level = clamp_level_to_max(original_level + document_offset + cascade_offset, cascade_max_level)
       else
-        header.level = emit_level(clamp_level(original_level + document_offset))
+        header.level = clamp_level(original_level + document_offset)
       end
 
       return header
     end,
   })
+
+  if document_quarto_shift_warning
+    and has_heading and not has_level_one
+    and quarto_may_shift_format() then
+    log.log_warning(
+      EXTENSION_NAME,
+      string.format(
+        'Quarto applies "shift-heading-level-by: -1" to this %s output after this'
+          .. ' filter runs, shifting every heading one level up, unless'
+          .. ' "shift-heading-level-by" is set explicitly. Set'
+          .. ' "shift-heading-level-by: 0" in the front matter to keep the levels'
+          .. ' this filter produces, then silence this warning with "%s: false"'
+          .. ' under "extensions.%s" (an explicit "shift-heading-level-by" is'
+          .. ' invisible to Lua filters).',
+        FORMAT,
+        QUARTO_SHIFT_WARNING_OPTION,
+        EXTENSION_NAME
+      )
+    )
+  end
 
   return doc
 end
