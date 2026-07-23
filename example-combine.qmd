@@ -11,6 +11,7 @@ format:
     embed-resources: true
   typst:
     output-file: example-combine-typst
+    shift-heading-level-by: 0
     papersize: a4
     margin:
       x: 2.5cm
@@ -24,6 +25,7 @@ filters:
 extensions:
   offset-headings:
     by: 1
+    quarto-shift-warning: false
 ---
 
 This fixture exercises the rules that combine the document-level offset with per-heading offsets, with the cap on the deepest reachable level, and with the cascade depth limit.

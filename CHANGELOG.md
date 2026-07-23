@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- feat!: Remove the `quarto-shift` option and the compensation for Quarto's automatic `shift-heading-level-by: -1`. The compensation could not detect an explicit `shift-heading-level-by` and silently produced wrong levels when one was set. The filter now only warns when Quarto's automatic shift can apply, recommending `shift-heading-level-by: 0` in the front matter, which disables the shift at the source.
+
+### New Features
+
+- feat: Add the `quarto-shift-warning` option (default `true`) to silence the automatic heading shift warning once `shift-heading-level-by: 0` is set explicitly, since an explicit `shift-heading-level-by` is invisible to Lua filters.
+
+### Documentation
+
+- docs: Rewrite the automatic heading shift section around the explicit `shift-heading-level-by: 0` fix.
+- docs: Set `shift-heading-level-by: 0` in the Typst format of both example fixtures.
+
 ## 0.3.0 (2026-07-23)
 
 ### New Features

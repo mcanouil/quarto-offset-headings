@@ -184,23 +184,22 @@ Quarto sets `shift-heading-level-by: -1` on its own whenever a document has no l
 Pandoc applies that shift _after_ every Lua filter has run, so it lands on top of the levels this extension produces.
 Left alone it makes Typst and PDF headings one level shallower than in HTML, and it destroys any heading the filter left at level 1: the first one replaces the document title, the others become plain paragraphs.
 
-The filter therefore detects the shift and compensates for it, so a heading ends at the same level in every format.
-Use `quarto-shift` to change this:
+A Lua filter can neither read nor cancel that shift, so the only reliable fix is to disable it at the source by setting `shift-heading-level-by` explicitly:
+
+```yaml
+shift-heading-level-by: 0
+```
+
+Quarto skips its automatic shift whenever `shift-heading-level-by` is set, whatever the value.
+The filter predicts when the automatic shift can apply and emits a warning recommending the setting above.
+Because an explicit `shift-heading-level-by` is invisible to Lua filters, the warning cannot tell that you have already set it.
+Once the setting is in place, silence the warning:
 
 ```yaml
 extensions:
   offset-headings:
-    quarto-shift: 0
+    quarto-shift-warning: false
 ```
-
-`auto` (the default) detects Quarto's rule, an integer states the shift explicitly, and `false` (or `0`) turns the compensation off.
-A warning is emitted whenever the filter compensates, naming the shift it assumed.
-
-Two limitations are worth knowing:
-
-- A `shift-heading-level-by` you set yourself is invisible to Lua filters, so the detection cannot see it.
-  Declare the same value through `quarto-shift`, or set `shift-heading-level-by: 0` to remove the shift altogether.
-- AsciiDoc books shift the headings of child pages by `-1`; the filter cannot tell a child page from any other document, so set `quarto-shift: -1` there.
 
 ## Configuration
 
@@ -210,7 +209,7 @@ Two limitations are worth knowing:
 | `recursive`    | boolean                     | `true`  | Default cascade behaviour for per-heading offsets when the attribute is omitted.                                                                                                                    |
 | `max-level`    | integer                     | `6`     | Default cap on the combined heading level (original + document offset + per-heading offset) when the attribute is omitted. Global `[1, 6]` applies; out-of-range values are clamped with a warning. |
 | `depth`        | integer                     | `0`     | Default cascade depth limit when the attribute is omitted. `0` means unlimited depth.                                                                                                               |
-| `quarto-shift` | `auto`, integer, or boolean | `auto`  | The `shift-heading-level-by` Quarto applies after this filter runs. `auto` detects it, an integer states it, `false` (or `0`) disables the compensation.                                            |
+| `quarto-shift-warning` | boolean | `true` | Whether to warn when Quarto's automatic `shift-heading-level-by: -1` can apply to the output. Set to `false` once `shift-heading-level-by: 0` is set explicitly.                                     |
 
 ### Attributes
 
