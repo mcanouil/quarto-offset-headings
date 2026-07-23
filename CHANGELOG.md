@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### New Features
+
+- feat: Add the `quarto-shift` option to state or disable the `shift-heading-level-by` Quarto applies after the filter runs.
+
+### Bug Fixes
+
+- fix: Compensate for the `shift-heading-level-by: -1` Quarto applies to Typst and PDF/LaTeX output when a document has no level-1 heading, so heading levels match across formats. Previously a heading left at level 1 was destroyed by that shift: the first one replaced the document title and the others became plain paragraphs.
+
+### Documentation
+
+- docs: Document the interaction with Quarto's automatic heading shift, including the AsciiDoc book and explicit `shift-heading-level-by` limitations.
+
 ## 0.2.2 (2026-06-08)
 
 - fix: move lua filter to pre-ast to ensure it runs before any filters (e.g., `cascade`).
