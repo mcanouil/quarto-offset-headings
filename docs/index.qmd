@@ -1,0 +1,83 @@
+---
+title: "Offset Headings"
+subtitle: "Shift heading levels, per heading or per document."
+description: "What the offset-headings extension is for, how it differs from shift-heading-level-by, and the smallest attribute that moves a heading."
+authors:
+  - name: "Mickaël CANOUIL, _Ph.D._"
+    orcid: "0000-0002-3396-4549"
+    url: "https://mickael.canouil.fr"
+---
+
+A section written to stand alone starts at level one, and dropping it into a larger document puts it above everything around it.
+Pandoc's `shift-heading-level-by` moves all of them by the same amount, and it runs after every filter has finished, so no extension can see the result and no single heading can be treated differently.
+
+`offset-headings` does the shifting during filtering instead.
+One heading, one subtree, or the whole document, with the offsets composing rather than replacing one another.
+
+## Installation
+
+```bash
+quarto add {{< var extension.reference >}}
+```
+
+This will install the extension under the `_extensions` subdirectory.
+If you are using version control, you will want to check in this directory.
+
+Or install it from your editor with [Quarto Wizard](https://m.canouil.dev/quarto-wizard):
+
+::: {.btn-group role="group" aria-label="Quarto Wizard installer options"}
+
+[Visual Studio Code](vscode://mcanouil.quarto-wizard/install?repo={{< var extension.wizard-reference >}}){.btn .btn-outline-primary title="Install {{< var extension.reference >}} in Visual Studio Code using the Quarto Wizard extension."}
+[Positron](positron://mcanouil.quarto-wizard/install?repo={{< var extension.wizard-reference >}}){.btn .btn-outline-primary title="Install {{< var extension.reference >}} in Positron using the Quarto Wizard extension."}
+[VSCodium](vscodium://mcanouil.quarto-wizard/install?repo={{< var extension.wizard-reference >}}){.btn .btn-outline-primary title="Install {{< var extension.reference >}} in VSCodium using the Quarto Wizard extension."}
+
+:::
+
+## Quick start
+
+Enable the filter:
+
+```yaml
+filters:
+  - offset-headings
+```
+
+Shift one heading and everything under it:
+
+```markdown
+## Section {offset-headings-by="1"}
+
+### Subsection
+```
+
+Both move down a level; the cascade is on by default.
+
+Or shift the whole document:
+
+```yaml
+extensions:
+  offset-headings:
+    by: 1
+```
+
+The two add together, so a per-heading offset adjusts the document offset rather than replacing it.
+
+See the [Reference](reference.qmd) for every option, and the [Examples](examples.qmd) for headings at levels you can inspect.
+
+## Where it works
+
+Every output format.
+The filter rewrites Pandoc's heading elements, so HTML, PDF, Typst, and Word all get the same levels.
+
+::: {.callout-warning}
+Quarto applies a `shift-heading-level-by: -1` of its own to Typst, and to PDF when sections are numbered, whenever a document has no level one heading.
+That runs after every filter and lands on top of these levels.
+Set `shift-heading-level-by: 0` to stop it; the [Reference](reference.qmd#quartos-automatic-shift) explains why that is the only reliable fix.
+:::
+
+## Links
+
+- [Reference](reference.qmd) for every option and attribute.
+- [Examples](examples.qmd) for headings at shifted levels.
+- [Changelog](changelog.qmd) for what each release changed.
+- [Source and issues](https://github.com/mcanouil/quarto-offset-headings) on GitHub.
