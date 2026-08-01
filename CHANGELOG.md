@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+- fix: Raise `quarto-required` to `>=1.9.38`. The extension manifest registers the filter at `pre-ast`, and the `_extension.yml` schema only accepts a filter entry point from that version; below it the render fails validation.
+
 ## 0.4.1 (2026-08-01)
 
 ### Documentation
