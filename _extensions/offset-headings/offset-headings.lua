@@ -192,9 +192,8 @@ local function parse_boolean(raw)
 end
 
 --- Read a boolean option from the extension config table.
---- A bare YAML boolean arrives as a Lua boolean, and get_metadata_value's
---- truthiness guard would drop `false`, so the raw config value is read
---- directly.
+--- A bare YAML boolean arrives as a Lua boolean, so the raw config value is
+--- read directly and no stringify round trip is needed.
 --- @param config table|nil The extension config table.
 --- @param key string The option key.
 --- @param default boolean The value used when the option is absent.
