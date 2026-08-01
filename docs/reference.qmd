@@ -136,8 +136,15 @@ extensions:
 | --- | --- |
 | The resulting level is between one and six. | Clamped. |
 | `max-level` is between one and six. | Warns, and the value is clamped. |
+| `by`, `max-level`, and `depth` are integers. | Warns, and the option falls back to its default. |
+| `offset-headings-by` is an integer. | Warns, the heading keeps the document offset alone, and no cascade starts. |
+| `offset-headings-max-level` and `offset-headings-depth` are integers. | Warns, and the document-level option applies instead. |
 
 : Validation rules. {.striped .hover tbl-colwidths="[50,50]"}
+
+A fractional number is rounded down rather than rejected, so `offset-headings-by="1.7"` offsets by one and `"-1.7"` by two in the other direction.
+
+Booleans read `true`, `yes`, and `1` as true, in any case; every other value is false.
 
 ## Limitations
 
