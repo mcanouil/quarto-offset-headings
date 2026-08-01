@@ -9,7 +9,7 @@ Unlike Pandoc's `shift-heading-level-by`, which runs after every Lua filter and 
 ## Installation
 
 ```bash
-quarto add mcanouil/quarto-offset-headings@0.4.1
+quarto add mcanouil/quarto-offset-headings@0.4.2
 ```
 
 This will install the extension under the `_extensions` subdirectory.
