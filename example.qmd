@@ -7,7 +7,6 @@ author:
     url: "https://mickael.canouil.fr"
 format:
   html:
-    output-file: index
     embed-resources: true
   typst:
     output-file: example-typst
@@ -27,56 +26,28 @@ extensions:
     quarto-shift-warning: false
 ---
 
-## Untouched Heading
+Every heading below carries the attribute shown above it.
 
-This heading has no attribute, so it keeps its level and its section number whether or not the filter runs.
+```markdown
+## Pushed down one level {offset-headings-by="1"}
 
-## Shifted Heading {offset-headings-by="1"}
+### Carried along by the cascade
+```
 
-This level-2 heading becomes a level-3 heading; the surrounding headings keep their original levels.
+## Pushed down one level {offset-headings-by="1"}
 
-## Recursive Cascade {offset-headings-by="1"}
+### Carried along by the cascade
 
-Cascading is on by default, so this heading and its nested headings all shift by 1.
+The cascade is on by default; `offset-headings-recursive="false"` limits an offset to the heading carrying it.
 
-### Nested Heading
+## Capped before it gets there {offset-headings-by="3" offset-headings-max-level="4"}
 
-This level-3 heading becomes a level-4 heading.
+Two plus three is five, and `offset-headings-max-level` holds it at four.
 
-#### Deeper Heading
+## Pulled up a level {offset-headings-by="-1"}
 
-This level-4 heading becomes a level-5 heading.
+A negative offset pulls a heading towards the top of the document.
 
-## Pull a Subsection Up
+Set `extensions.offset-headings.by` to shift every heading at once; the two add together.
 
-### Pulled-up Subsection {offset-headings-by="-1"}
-
-This level-3 heading becomes a level-2 heading, joining the top level instead of nesting.
-
-## Non-recursive Shift {offset-headings-by="1" offset-headings-recursive="false"}
-
-This level-2 heading becomes a level-3 heading, but its nested heading is left untouched.
-
-### Untouched Nested Heading
-
-This level-3 heading keeps its original level.
-
-## Capped Shift {offset-headings-by="3" offset-headings-max-level="4"}
-
-A `by` of 3 would push this level-2 heading to level 5, but `max-level` of 4 caps it at level 4.
-
-### Capped Nested Heading
-
-This level-3 heading would become level 6 through the cascade, but the cap holds it at level 4 as well.
-
-## Bounded Cascade {offset-headings-by="1" offset-headings-depth="1"}
-
-This level-2 heading becomes a level-3 heading, and the cascade reaches only one level of descendants.
-
-### Cascaded Nested Heading
-
-This level-3 heading is within the cascade depth, so it becomes a level-4 heading.
-
-#### Beyond the Cascade Depth
-
-This level-4 heading is beyond the cascade depth limit, so it keeps its original level.
+Full documentation: <https://m.canouil.dev/quarto-offset-headings/>.

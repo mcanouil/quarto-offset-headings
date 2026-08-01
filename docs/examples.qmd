@@ -1,0 +1,71 @@
+---
+title: "Examples"
+subtitle: "Headings at the levels the filter gives them."
+description: "Each offset attribute applied to a real heading, so the rendered level and the page contents show the result."
+---
+
+Every heading below carries the attribute shown above it, and the filter sets its level as this page is rendered.
+The contents list beside the page reflects the levels after offsetting, not the ones written.
+
+This page sets no document-level `by`, so each heading shows what its own attribute does.
+
+## A heading with no offset
+
+Written as `## A heading with no offset`, and rendered at level two.
+
+## Pushed down one level {offset-headings-by="1"}
+
+Written as `## Pushed down one level {offset-headings-by="1"}`, and rendered at level three.
+
+### Carried along by the cascade
+
+Written as `### Carried along by the cascade`, with no attribute of its own.
+The cascade is on by default, so it moves with its parent and is rendered at level four.
+
+## Cascade turned off {offset-headings-by="1" offset-headings-recursive="false"}
+
+Written with `offset-headings-recursive="false"`, so the offset applies to this heading alone.
+
+### Left where it was
+
+No attribute, and no cascade reaching it, so this stays at level three.
+
+## Capped before it gets there {offset-headings-by="3" offset-headings-max-level="4"}
+
+Written as `{offset-headings-by="3" offset-headings-max-level="4"}`.
+
+Two plus three is five, and the cap holds it at level four.
+
+## Cascade with a depth limit {offset-headings-by="1" offset-headings-depth="1"}
+
+Written as `{offset-headings-by="1" offset-headings-depth="1"}`.
+
+### Within the limit
+
+One level below the attributed heading, so it inherits the offset.
+
+#### Beyond the limit
+
+Two levels below, so the cascade does not reach it and it keeps its level.
+
+## Pulled up a level {offset-headings-by="-1"}
+
+Written as `## Pulled up a level {offset-headings-by="-1"}`, and rendered at level one.
+
+A negative offset pulls a heading towards the top of the document.
+
+## Shifting the whole document
+
+Rather than annotating each heading, set one offset for all of them:
+
+```yaml
+extensions:
+  offset-headings:
+    by: 1
+```
+
+The two add together, so a heading attribute adjusts that figure rather than replacing it, and a `-1` attribute cancels it exactly.
+
+## Source
+
+The repository ships a short, standalone starting point you can copy: [`example.qmd`](https://github.com/mcanouil/quarto-offset-headings/blob/main/example.qmd), alongside [`example-combine.qmd`](https://github.com/mcanouil/quarto-offset-headings/blob/main/example-combine.qmd), which exercises the combine rules.
