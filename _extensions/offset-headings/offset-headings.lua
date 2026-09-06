@@ -95,8 +95,8 @@
 --- Extension name constant
 local EXTENSION_NAME = 'offset-headings'
 
-local log = require(quarto.utils.resolve_path('_modules/logging.lua'):gsub('%.lua$', ''))
-local meta_utils = require(quarto.utils.resolve_path('_modules/metadata.lua'):gsub('%.lua$', ''))
+local log = require(quarto.utils.resolve_path('_vendor/quarto-lua-modules/logging.lua'):gsub('%.lua$', ''))
+local meta_utils = require(quarto.utils.resolve_path('_vendor/quarto-lua-modules/metadata.lua'):gsub('%.lua$', ''))
 
 --- Document-level metadata keys (under extensions.offset-headings).
 local OFFSET_OPTION = 'by'
