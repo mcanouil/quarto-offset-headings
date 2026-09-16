@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+- fix: Read the offset-headings-recursive, offset-headings-max-level and offset-headings-depth attributes through the schema, so an explicit value on the heading is trusted over its document-level default only when the heading actually wrote it, and an invalid value is named once. (#29)
+- fix: Reject an offset-headings-by value that is not a whole number, instead of silently rounding it down and applying it. (#29)
+- fix: Read the by, max-level and depth document-level options through the schema, so a fractional or otherwise non-integer value is rejected instead of silently applied, and an invalid value is named once. (#29)
+
 ### Documentation
 
 - docs: Serve the extension's social card as the Open Graph image, so a shared link shows the card rather than the first image on the page. (#25)
