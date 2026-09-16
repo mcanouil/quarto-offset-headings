@@ -320,6 +320,14 @@ local function process_pandoc(doc)
       if original_level == MIN_LEVEL then
         has_level_one = true
       end
+      -- Validates the whole Header group in one call, and merges in the
+      -- schema's own `default:` for every attribute this element did not
+      -- write. That merge is exactly why each read below tests the RAW
+      -- attribute for presence first: the merged table cannot tell "the
+      -- document wrote the default" from "the document wrote nothing", and
+      -- only the latter may fall back to the document-level option.
+      local resolved = checker:attributes(header.attributes, 'Header') or {}
+
       local raw_offset = header.attributes[OFFSET_ATTRIBUTE]
 
       if raw_offset ~= nil then
@@ -327,24 +335,31 @@ local function process_pandoc(doc)
         header.attributes[OFFSET_ATTRIBUTE] = nil
         local raw_recursive = header.attributes[RECURSIVE_ATTRIBUTE]
         local recursive
-        if raw_recursive ~= nil then
-          recursive = parse_boolean(raw_recursive)
-        else
+        if raw_recursive == nil then
           recursive = document_recursive
+        else
+          -- A value the schema rejects is named once, by the checker:attributes
+          -- call above; no extension-side echo is added here.
+          local resolved_recursive = resolved[RECURSIVE_ATTRIBUTE]
+          if type(resolved_recursive) == 'boolean' then
+            recursive = resolved_recursive
+          else
+            recursive = document_recursive
+          end
         end
         header.attributes[RECURSIVE_ATTRIBUTE] = nil
 
         local raw_max_level = header.attributes[MAX_LEVEL_ATTRIBUTE]
         local max_level = document_max_level
         if raw_max_level ~= nil then
-          local parsed_max_level = parse_offset(raw_max_level)
-          if parsed_max_level == nil then
-            log.log_warning(
-              EXTENSION_NAME,
-              'Ignoring non-integer "' .. MAX_LEVEL_ATTRIBUTE .. '": "' .. raw_max_level .. '".'
-            )
-          else
-            max_level = clamp_max_level_with_warning(parsed_max_level, MAX_LEVEL_ATTRIBUTE)
+          -- A non-integer value is named once, by the checker:attributes call
+          -- above; an in-range integer that falls outside [1, 6] still gets
+          -- clamp_max_level_with_warning's own message below, because that one
+          -- names the resulting clamped value, which the schema's message does
+          -- not.
+          local resolved_max_level = resolved[MAX_LEVEL_ATTRIBUTE]
+          if type(resolved_max_level) == 'number' then
+            max_level = clamp_max_level_with_warning(resolved_max_level, MAX_LEVEL_ATTRIBUTE)
           end
         end
         header.attributes[MAX_LEVEL_ATTRIBUTE] = nil
@@ -352,23 +367,19 @@ local function process_pandoc(doc)
         local raw_cascade_depth = header.attributes[DEPTH_ATTRIBUTE]
         local depth = document_cascade_depth
         if raw_cascade_depth ~= nil then
-          local parsed_depth = parse_offset(raw_cascade_depth)
-          if parsed_depth == nil then
-            log.log_warning(
-              EXTENSION_NAME,
-              'Ignoring non-integer "' .. DEPTH_ATTRIBUTE .. '": "' .. raw_cascade_depth .. '".'
-            )
-          else
-            depth = parsed_depth
+          -- A value the schema rejects is named once, by the checker:attributes
+          -- call above; no extension-side echo is added here.
+          local resolved_depth = resolved[DEPTH_ATTRIBUTE]
+          if type(resolved_depth) == 'number' then
+            depth = resolved_depth
           end
         end
         header.attributes[DEPTH_ATTRIBUTE] = nil
 
         if offset == nil then
-          log.log_warning(
-            EXTENSION_NAME,
-            'Ignoring non-integer "' .. OFFSET_ATTRIBUTE .. '": "' .. raw_offset .. '".'
-          )
+          -- A value the schema rejects is named once, by the
+          -- checker:attributes call above; no extension-side echo is added
+          -- here.
           header.level = clamp_level(original_level + document_offset)
           clear_cascade()
         else
