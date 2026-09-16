@@ -166,20 +166,6 @@ local function clamp_level_to_max(level, max)
   return math.max(MIN_LEVEL, math.min(MAX_LEVEL, math.min(max, level)))
 end
 
---- Parse a string into an integer offset.
---- @param raw string|nil The raw attribute value.
---- @return number|nil The integer offset, or nil when not a number.
-local function parse_offset(raw)
-  if raw == nil then
-    return nil
-  end
-  local value = tonumber(raw)
-  if value == nil then
-    return nil
-  end
-  return math.floor(value)
-end
-
 --- Extract the per-heading offset from the element's resolved attributes.
 --- The schema declares an integer, and the validator hands back a number when
 --- the document wrote one. A value it rejects arrives as the text the
@@ -249,35 +235,40 @@ end
 local function read_metadata(meta)
   checker:options(meta)
 
-  local raw = meta_utils.get_metadata_value(meta, EXTENSION_NAME, OFFSET_OPTION)
-  local offset = parse_offset(raw)
-  if raw ~= nil and offset == nil then
-    log.log_warning(EXTENSION_NAME, 'Ignoring non-integer "' .. OFFSET_OPTION .. '": "' .. raw .. '".')
-    offset = 0
+  -- The schema declares `by`, `max-level` and `depth` as integers, and the
+  -- validator hands back a number once it has coerced the written value to a
+  -- whole number. A value it rejects, such as "1.5", arrives as the original
+  -- text instead, and the checker has already named it, so it is ignored
+  -- here rather than applied; only the offset-headings-by attribute used to
+  -- have this guard, and this document-level option carried the identical
+  -- fault, applying "1.5" as 1 while the schema called the same value
+  -- invalid.
+  local resolved_offset = checker:option(OFFSET_OPTION)
+  if type(resolved_offset) == 'number' then
+    document_offset = resolved_offset
+  else
+    document_offset = 0
   end
-  document_offset = offset or 0
 
   local config = meta_utils.get_extension_config(meta, EXTENSION_NAME)
   document_recursive = read_boolean_option(config, RECURSIVE_OPTION, true)
 
-  local raw_max_level = meta_utils.get_metadata_value(meta, EXTENSION_NAME, MAX_LEVEL_OPTION)
-  local max_level = parse_offset(raw_max_level)
-  if raw_max_level ~= nil and max_level == nil then
-    log.log_warning(EXTENSION_NAME, 'Ignoring non-integer "' .. MAX_LEVEL_OPTION .. '": "' .. raw_max_level .. '".')
-    max_level = MAX_LEVEL
+  local resolved_max_level = checker:option(MAX_LEVEL_OPTION)
+  if type(resolved_max_level) == 'number' then
+    -- An in-range integer stays silent; one outside [1, 6] still gets
+    -- clamp_max_level_with_warning's own message, because that one names the
+    -- resulting clamped value, which the schema's own message does not.
+    document_max_level = clamp_max_level_with_warning(resolved_max_level, MAX_LEVEL_OPTION)
+  else
+    document_max_level = MAX_LEVEL
   end
-  if max_level ~= nil then
-    max_level = clamp_max_level_with_warning(max_level, MAX_LEVEL_OPTION)
-  end
-  document_max_level = max_level or MAX_LEVEL
 
-  local raw_cascade_depth = meta_utils.get_metadata_value(meta, EXTENSION_NAME, DEPTH_OPTION)
-  local cascade_depth = parse_offset(raw_cascade_depth)
-  if raw_cascade_depth ~= nil and cascade_depth == nil then
-    log.log_warning(EXTENSION_NAME, 'Ignoring non-integer "' .. DEPTH_OPTION .. '": "' .. raw_cascade_depth .. '".')
-    cascade_depth = UNLIMITED_CASCADE_DEPTH
+  local resolved_cascade_depth = checker:option(DEPTH_OPTION)
+  if type(resolved_cascade_depth) == 'number' then
+    document_cascade_depth = resolved_cascade_depth
+  else
+    document_cascade_depth = UNLIMITED_CASCADE_DEPTH
   end
-  document_cascade_depth = cascade_depth or UNLIMITED_CASCADE_DEPTH
 
   document_quarto_shift_warning = read_boolean_option(config, QUARTO_SHIFT_WARNING_OPTION, true)
 
