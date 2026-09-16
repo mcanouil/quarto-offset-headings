@@ -180,6 +180,22 @@ local function parse_offset(raw)
   return math.floor(value)
 end
 
+--- Extract the per-heading offset from the element's resolved attributes.
+--- The schema declares an integer, and the validator hands back a number when
+--- the document wrote one. A value it rejects arrives as the text the
+--- document wrote, and the checker has already named it, so it is ignored
+--- here rather than applied. `offset-headings-by="1.5"` used to be applied
+--- as 1 (floored) while the same document was told the value was invalid.
+--- @param resolved table The element's resolved attributes.
+--- @return number|nil The offset, or nil when the schema did not accept one.
+local function get_offset_from_resolved(resolved)
+  local value = resolved[OFFSET_ATTRIBUTE]
+  if type(value) ~= 'number' then
+    return nil
+  end
+  return value
+end
+
 --- Clamp a max-level value to [MIN_LEVEL, MAX_LEVEL] and warn when out of range.
 --- @param value number The desired max-level.
 --- @param source string Human-readable source label (option or attribute name).
@@ -331,7 +347,7 @@ local function process_pandoc(doc)
       local raw_offset = header.attributes[OFFSET_ATTRIBUTE]
 
       if raw_offset ~= nil then
-        local offset = parse_offset(raw_offset)
+        local offset = get_offset_from_resolved(resolved)
         header.attributes[OFFSET_ATTRIBUTE] = nil
         local raw_recursive = header.attributes[RECURSIVE_ATTRIBUTE]
         local recursive
