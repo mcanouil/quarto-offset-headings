@@ -354,14 +354,14 @@ local function process_pandoc(doc)
         if raw_recursive == nil then
           recursive = document_recursive
         else
-          -- A value the schema rejects is named once, by the checker:attributes
-          -- call above; no extension-side echo is added here.
-          local resolved_recursive = resolved[RECURSIVE_ATTRIBUTE]
-          if type(resolved_recursive) == 'boolean' then
-            recursive = resolved_recursive
-          else
-            recursive = document_recursive
-          end
+          -- The schema, via checker:attributes above, still validates and
+          -- reports a non-boolean spelling here, but the VALUE stays
+          -- parse_boolean's own, wider than the schema's true/false-only
+          -- coercion: "yes" and "1" have always cascaded, and a parser wider
+          -- than the schema is a different finding from the one this task
+          -- fixes, already surfaced as a type message while the value keeps
+          -- working, not a behaviour to change.
+          recursive = parse_boolean(raw_recursive)
         end
         header.attributes[RECURSIVE_ATTRIBUTE] = nil
 
