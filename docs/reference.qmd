@@ -27,7 +27,7 @@ extensions:
 | --- | --- | --- | --- |
 | `by` | integer | `0` | Offset added to every heading in the document. |
 | `recursive` | boolean | `true` | Whether a per-heading offset cascades, for headings that do not say. |
-| `max-level` | integer | `6` | Deepest level a heading may be pushed to, for headings that do not say. |
+| `max-level` | integer | `6` | Deepest level a heading that writes an offset, or inherits one from a cascade, may be pushed to. |
 | `depth` | integer | `0` | How many descendant levels inherit a cascade, for headings that do not say. `0` is unlimited. |
 | `quarto-shift-warning` | boolean | `true` | Whether to warn when Quarto's own shift can apply. |
 
@@ -57,6 +57,9 @@ A heading's final level is the sum of three things, then clamped:
 3. Its own `offset-headings-by`, or the offset cascading from an ancestor.
 
 The result is capped at `max-level`, then clamped to the range one to six.
+
+The cap applies to a heading that writes `offset-headings-by`, and to a heading that inherits a cascade.
+A heading that does neither takes the document offset and is clamped to the range one to six only, whatever `max-level` says.
 
 | Written | Document `by` | Attribute | Result |
 | --- | --- | --- | --- |
@@ -142,7 +145,7 @@ extensions:
 
 : Validation rules. {.striped .hover tbl-colwidths="[50,50]"}
 
-A fractional number is rounded down rather than rejected, so `offset-headings-by="1.7"` offsets by one and `"-1.7"` by two in the other direction.
+A fractional number is rejected and reported, and the heading keeps the level it was written at.
 
 Booleans read `true`, `yes`, and `1` as true, in any case; every other value is false.
 
