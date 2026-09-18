@@ -58,7 +58,8 @@ A heading's final level is the sum of three things, then clamped:
 
 The result is capped at `max-level`, then clamped to the range one to six.
 
-The cap applies to a heading that writes `offset-headings-by`, and to a heading that inherits a cascade.
+The cap applies to a heading whose `offset-headings-by` the schema accepts, and to a heading that inherits a cascade.
+A heading whose value the schema rejects escapes the cap as well.
 A heading that does neither takes the document offset and is clamped to the range one to six only, whatever `max-level` says.
 
 | Written | Document `by` | Attribute | Result |
@@ -138,8 +139,8 @@ extensions:
 | Rule | On failure |
 | --- | --- |
 | The resulting level is between one and six. | Clamped. |
-| `max-level` is between one and six. | Warns, and the value is clamped. |
-| `by`, `max-level`, and `depth` are integers. | Warns, and the option falls back to its default. |
+| `max-level` is between one and six. | Reported as an error, and the value is clamped. |
+| `by`, `max-level`, and `depth` are integers. | Reported as an error, and the option falls back to its default. |
 | `offset-headings-by` is an integer. | Warns, the heading keeps the document offset alone, and no cascade starts. |
 | `offset-headings-max-level` and `offset-headings-depth` are integers. | Warns, and the document-level option applies instead. |
 
