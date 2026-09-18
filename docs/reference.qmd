@@ -145,7 +145,8 @@ extensions:
 
 : Validation rules. {.striped .hover tbl-colwidths="[50,50]"}
 
-A fractional number is rejected and reported, and the heading takes the document offset alone, as though the attribute had not been written.
+A fractional number is rejected and reported, and the heading takes the document offset alone.
+It neither starts a cascade nor inherits one, so it is not the same as leaving the attribute out.
 
 Booleans read `true`, `yes`, and `1` as true, in any case; every other value is false.
 
