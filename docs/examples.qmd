@@ -54,6 +54,33 @@ Written as `## Pulled up a level {offset-headings-by="-1"}`, and rendered at lev
 
 A negative offset pulls a heading towards the top of the document.
 
+## Held at level one {offset-headings-by="-3"}
+
+Written as `## Held at level one {offset-headings-by="-3"}`.
+
+Two minus three is minus one, and level one is the top of the range.
+The heading stops there, and the filter stays silent, because the range one to six is a limit rather than a mistake.
+
+## Held at level six {offset-headings-by="5"}
+
+Written as `## Held at level six {offset-headings-by="5"}`.
+
+Two plus five is seven, and level six is the bottom of the range.
+The heading stops there, again with no message.
+
+## Where a cascade stops {offset-headings-by="1"}
+
+Written as `## Where a cascade stops {offset-headings-by="1"}`, with the cascade left on.
+
+### Carried down with it
+
+Written deeper than the heading above, so the cascade reaches it, and it is rendered at level four.
+
+## Back outside the cascade
+
+Written at level two, the same level as the attributed heading above.
+A cascade stops at the first heading back at that level, so this one keeps level two.
+
 ## Shifting the whole document
 
 Rather than annotating each heading, set one offset for all of them:
@@ -65,6 +92,99 @@ extensions:
 ```
 
 The two add together, so a heading attribute adjusts that figure rather than replacing it, and a `-1` attribute cancels it exactly.
+
+## Setting the cascade defaults once
+
+`recursive` and `depth` are document-level options as well, beside `by`:
+
+```yaml
+extensions:
+  offset-headings:
+    recursive: false
+    depth: 1
+```
+
+Each one supplies the value a heading uses when it writes no attribute of its own.
+With `recursive: false`, a heading marked `{offset-headings-by="1"}` moves on its own, and `offset-headings-recursive="true"` opts one heading back in.
+With `depth: 1`, a cascade reaches one level below the heading that starts it, and `offset-headings-depth="0"` gives one heading an unlimited cascade again.
+
+Neither option can be shown on this page.
+A document-level option applies to every heading in its document, and one page cannot hold two settings at once.
+See the [Reference](reference.qmd#document-options) for the full list.
+
+## When the filter warns
+
+Most corrections are silent.
+The clamp to the range one to six is one of them, as the headings held at level one and at level six show.
+
+The snippets below are quoted rather than rendered, so this page stays free of the messages they produce.
+
+A value the schema does not accept is named once.
+The heading then keeps the document offset alone, and it starts no cascade:
+
+```markdown
+## Section {offset-headings-by="1.5"}
+```
+
+```text
+(W) [offset-headings] Header.offset-headings-by: must be of type "integer", got "string".
+```
+
+A `max-level` outside the range one to six is named twice.
+The schema names the value, and the filter names the level it settles on:
+
+```markdown
+## Section {offset-headings-by="3" offset-headings-max-level="8"}
+```
+
+```text
+(W) [offset-headings] Header.offset-headings-max-level: must be at most 6, got 8.
+(W) [offset-headings] Clamping "offset-headings-max-level" value 8 to 6 (must be in the range [1, 6]).
+```
+
+The same pair follows the `max-level` document option, where the schema reports an error rather than a warning:
+
+```text
+(E) [offset-headings] max-level: must be at most 6, got 8.
+(W) [offset-headings] Clamping "max-level" value 8 to 6 (must be in the range [1, 6]).
+```
+
+The render finishes in every case.
+The [Reference](reference.qmd#validation) gives the rule behind each message.
+
+## Quarto's automatic shift
+
+The filter raises this warning for Typst output, and for PDF output with numbered sections, so an HTML page such as this one cannot show it.
+A Typst document with no level-one heading produces it:
+
+```markdown
+---
+title: "Report"
+format: typst
+filters:
+  - offset-headings
+---
+
+## Section
+```
+
+```text
+(W) [offset-headings] Quarto applies "shift-heading-level-by: -1" to this typst output after this filter runs, shifting every heading one level up, unless "shift-heading-level-by" is set explicitly. Set "shift-heading-level-by: 0" in the front matter to keep the levels this filter produces, then silence this warning with "quarto-shift-warning: false" under "extensions.offset-headings" (an explicit "shift-heading-level-by" is invisible to Lua filters).
+```
+
+`shift-heading-level-by: 0` stops the shift, and the warning still appears, because a Lua filter cannot see that the option is set.
+Both lines are needed, one to keep the levels and one to quieten the filter:
+
+```yaml
+shift-heading-level-by: 0
+extensions:
+  offset-headings:
+    quarto-shift-warning: false
+```
+
+The filter reads the heading levels as they are written, before any offset.
+A document that writes one heading at level one therefore gets no warning at all.
+The [Reference](reference.qmd#quartos-automatic-shift) gives the exact condition and explains why a filter cannot cancel the shift.
 
 ## Source
 
