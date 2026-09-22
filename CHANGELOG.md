@@ -12,6 +12,7 @@
 ### Documentation
 
 - docs: Serve the extension's social card as the Open Graph image, so a shared link shows the card rather than the first image on the page. (#25)
+- docs: Add worked examples for the range limits, the end of a cascade, the document-level cascade defaults, the messages the filter reports, and Quarto's automatic heading shift.
 
 ### Refactoring
 
