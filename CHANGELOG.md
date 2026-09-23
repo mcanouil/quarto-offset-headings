@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.5.1 (2026-09-23)
+
 ### Bug Fixes
 
 - fix: Read the offset-headings-recursive, offset-headings-max-level and offset-headings-depth attributes through the schema, so an explicit value on the heading is trusted over its document-level default only when the heading actually wrote it, and an invalid value is named once. (#29)
