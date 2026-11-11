@@ -302,17 +302,13 @@ end
 --- @param doc pandoc.Pandoc The full document.
 --- @return pandoc.Pandoc The document with heading levels adjusted.
 local function process_pandoc(doc)
-  local cascade_offset = nil
-  local cascade_base_level = nil
-  local cascade_max_level = nil
-  local cascade_depth = nil
-
   --- Stop the active cascade, clearing all of its tracked state.
-  local function clear_cascade()
-    cascade_offset = nil
-    cascade_base_level = nil
-    cascade_max_level = nil
-    cascade_depth = nil
+  --- @param cascade table The cascade state to clear.
+  local function clear_cascade(cascade)
+    cascade.offset = nil
+    cascade.base_level = nil
+    cascade.max_level = nil
+    cascade.depth = nil
   end
 
   --- Quarto decides its automatic shift from the source heading levels, so
@@ -320,105 +316,138 @@ local function process_pandoc(doc)
   local has_heading = false
   local has_level_one = false
 
-  doc.blocks = doc.blocks:walk({
-    Header = function(header)
-      local original_level = header.level
-      has_heading = true
-      if original_level == MIN_LEVEL then
-        has_level_one = true
-      end
-      -- Validates the whole Header group in one call, and merges in the
-      -- schema's own `default:` for every attribute this element did not
-      -- write. That merge is exactly why each read below tests the RAW
-      -- attribute for presence first: the merged table cannot tell "the
-      -- document wrote the default" from "the document wrote nothing", and
-      -- only the latter may fall back to the document-level option.
-      local resolved = checker:attributes(header.attributes, 'Header') or {}
+  --- Offset one heading and update the cascade state of its scope.
+  --- @param header pandoc.Header The heading to offset.
+  --- @param cascade table The cascade state of the scope that holds the heading.
+  --- @return pandoc.Header The heading with its level adjusted.
+  local function offset_header(header, cascade)
+    local original_level = header.level
+    has_heading = true
+    if original_level == MIN_LEVEL then
+      has_level_one = true
+    end
+    -- Validates the whole Header group in one call, and merges in the
+    -- schema's own `default:` for every attribute this element did not
+    -- write. That merge is exactly why each read below tests the RAW
+    -- attribute for presence first: the merged table cannot tell "the
+    -- document wrote the default" from "the document wrote nothing", and
+    -- only the latter may fall back to the document-level option.
+    local resolved = checker:attributes(header.attributes, 'Header') or {}
 
-      local raw_offset = header.attributes[OFFSET_ATTRIBUTE]
+    local raw_offset = header.attributes[OFFSET_ATTRIBUTE]
 
-      if raw_offset ~= nil then
-        local offset = get_offset_from_resolved(resolved)
-        header.attributes[OFFSET_ATTRIBUTE] = nil
-        local raw_recursive = header.attributes[RECURSIVE_ATTRIBUTE]
-        local recursive
-        if raw_recursive == nil then
-          recursive = document_recursive
-        else
-          -- The schema, via checker:attributes above, still validates and
-          -- reports a non-boolean spelling here, but the VALUE stays
-          -- parse_boolean's own, wider than the schema's true/false-only
-          -- coercion: "yes" and "1" have always cascaded, and a parser wider
-          -- than the schema is a different finding from the one this task
-          -- fixes, already surfaced as a type message while the value keeps
-          -- working, not a behaviour to change.
-          recursive = parse_boolean(raw_recursive)
-        end
-        header.attributes[RECURSIVE_ATTRIBUTE] = nil
-
-        local raw_max_level = header.attributes[MAX_LEVEL_ATTRIBUTE]
-        local max_level = document_max_level
-        if raw_max_level ~= nil then
-          -- A non-integer value is named once, by the checker:attributes call
-          -- above; an in-range integer that falls outside [1, 6] still gets
-          -- clamp_max_level_with_warning's own message below, because that one
-          -- names the resulting clamped value, which the schema's message does
-          -- not.
-          local resolved_max_level = resolved[MAX_LEVEL_ATTRIBUTE]
-          if type(resolved_max_level) == 'number' then
-            max_level = clamp_max_level_with_warning(resolved_max_level, MAX_LEVEL_ATTRIBUTE)
-          end
-        end
-        header.attributes[MAX_LEVEL_ATTRIBUTE] = nil
-
-        local raw_cascade_depth = header.attributes[DEPTH_ATTRIBUTE]
-        local depth = document_cascade_depth
-        if raw_cascade_depth ~= nil then
-          -- A value the schema rejects is named once, by the checker:attributes
-          -- call above; no extension-side echo is added here.
-          local resolved_depth = resolved[DEPTH_ATTRIBUTE]
-          if type(resolved_depth) == 'number' then
-            depth = resolved_depth
-          end
-        end
-        header.attributes[DEPTH_ATTRIBUTE] = nil
-
-        if offset == nil then
-          -- A value the schema rejects is named once, by the
-          -- checker:attributes call above; no extension-side echo is added
-          -- here.
-          header.level = clamp_level(original_level + document_offset)
-          clear_cascade()
-        else
-          header.level = clamp_level_to_max(original_level + document_offset + offset, max_level)
-          if recursive then
-            cascade_offset = offset
-            cascade_base_level = original_level
-            cascade_max_level = max_level
-            cascade_depth = depth
-          else
-            clear_cascade()
-          end
-        end
-      elseif cascade_offset ~= nil and original_level <= cascade_base_level then
-        -- Sibling or ancestor: stop cascading and apply only the document offset.
-        clear_cascade()
-        header.level = clamp_level(original_level + document_offset)
-      elseif cascade_offset ~= nil
-        and cascade_depth ~= UNLIMITED_CASCADE_DEPTH
-        and (original_level - cascade_base_level) > cascade_depth then
-        -- Deeper than the cascade depth limit: apply only the document offset.
-        header.level = clamp_level(original_level + document_offset)
-      elseif cascade_offset ~= nil then
-        -- Descendant within the active cascade: apply document and cascade offsets.
-        header.level = clamp_level_to_max(original_level + document_offset + cascade_offset, cascade_max_level)
+    if raw_offset ~= nil then
+      local offset = get_offset_from_resolved(resolved)
+      header.attributes[OFFSET_ATTRIBUTE] = nil
+      local raw_recursive = header.attributes[RECURSIVE_ATTRIBUTE]
+      local recursive
+      if raw_recursive == nil then
+        recursive = document_recursive
       else
-        header.level = clamp_level(original_level + document_offset)
+        -- The schema, via checker:attributes above, still validates and
+        -- reports a non-boolean spelling here, but the VALUE stays
+        -- parse_boolean's own, wider than the schema's true/false-only
+        -- coercion: "yes" and "1" have always cascaded, and a parser wider
+        -- than the schema is a different finding from the one this task
+        -- fixes, already surfaced as a type message while the value keeps
+        -- working, not a behaviour to change.
+        recursive = parse_boolean(raw_recursive)
       end
+      header.attributes[RECURSIVE_ATTRIBUTE] = nil
 
-      return header
-    end,
-  })
+      local raw_max_level = header.attributes[MAX_LEVEL_ATTRIBUTE]
+      local max_level = document_max_level
+      if raw_max_level ~= nil then
+        -- A non-integer value is named once, by the checker:attributes call
+        -- above; an in-range integer that falls outside [1, 6] still gets
+        -- clamp_max_level_with_warning's own message below, because that one
+        -- names the resulting clamped value, which the schema's message does
+        -- not.
+        local resolved_max_level = resolved[MAX_LEVEL_ATTRIBUTE]
+        if type(resolved_max_level) == 'number' then
+          max_level = clamp_max_level_with_warning(resolved_max_level, MAX_LEVEL_ATTRIBUTE)
+        end
+      end
+      header.attributes[MAX_LEVEL_ATTRIBUTE] = nil
+
+      local raw_cascade_depth = header.attributes[DEPTH_ATTRIBUTE]
+      local depth = document_cascade_depth
+      if raw_cascade_depth ~= nil then
+        -- A value the schema rejects is named once, by the checker:attributes
+        -- call above; no extension-side echo is added here.
+        local resolved_depth = resolved[DEPTH_ATTRIBUTE]
+        if type(resolved_depth) == 'number' then
+          depth = resolved_depth
+        end
+      end
+      header.attributes[DEPTH_ATTRIBUTE] = nil
+
+      if offset == nil then
+        -- A value the schema rejects is named once, by the
+        -- checker:attributes call above; no extension-side echo is added
+        -- here.
+        header.level = clamp_level(original_level + document_offset)
+        clear_cascade(cascade)
+      else
+        header.level = clamp_level_to_max(original_level + document_offset + offset, max_level)
+        if recursive then
+          cascade.offset = offset
+          cascade.base_level = original_level
+          cascade.max_level = max_level
+          cascade.depth = depth
+        else
+          clear_cascade(cascade)
+        end
+      end
+    elseif cascade.offset ~= nil and original_level <= cascade.base_level then
+      -- Sibling or ancestor: stop cascading and apply only the document offset.
+      clear_cascade(cascade)
+      header.level = clamp_level(original_level + document_offset)
+    elseif cascade.offset ~= nil
+      and cascade.depth ~= UNLIMITED_CASCADE_DEPTH
+      and (original_level - cascade.base_level) > cascade.depth then
+      -- Deeper than the cascade depth limit: apply only the document offset.
+      header.level = clamp_level(original_level + document_offset)
+    elseif cascade.offset ~= nil then
+      -- Descendant within the active cascade: apply document and cascade offsets.
+      header.level = clamp_level_to_max(original_level + document_offset + cascade.offset, cascade.max_level)
+    else
+      header.level = clamp_level(original_level + document_offset)
+    end
+
+    return header
+  end
+
+  --- Offset the headings of a block list in reading order.
+  --- Each nested block list, such as the content of a div, a block quote or a
+  --- list item, works on a copy of the cascade state of its parent. A heading
+  --- inside it can inherit, start or stop a cascade, but the change does not
+  --- leak out to the headings that follow the nested block.
+  --- @param blocks pandoc.Blocks The block list to process.
+  --- @param cascade table The cascade state of the scope that holds the blocks.
+  --- @return pandoc.Blocks The block list with heading levels adjusted.
+  local function process_blocks(blocks, cascade)
+    for index, block in ipairs(blocks) do
+      if block.t == 'Header' then
+        blocks[index] = offset_header(block, cascade)
+      else
+        blocks[index] = block:walk({
+          traverse = 'topdown',
+          Blocks = function(nested)
+            return process_blocks(nested, {
+              offset = cascade.offset,
+              base_level = cascade.base_level,
+              max_level = cascade.max_level,
+              depth = cascade.depth,
+            }), false
+          end,
+        })
+      end
+    end
+    return blocks
+  end
+
+  doc.blocks = process_blocks(doc.blocks, {})
 
   if document_quarto_shift_warning
     and has_heading and not has_level_one

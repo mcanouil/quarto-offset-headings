@@ -77,6 +77,11 @@ A negative attribute cancels the document offset rather than overriding it.
 
 An offset flows to every heading nested below the one carrying it, and stops at the first heading back at or above the attributed heading's original level.
 
+A nested block, such as a div, a callout, a `.notes` div, or a block quote, has its own cascade scope.
+A heading in this block gets the cascade that is active when the block starts.
+This heading can also start or stop a cascade, but only inside the block.
+After the block, the cascade continues as it was before the block.
+
 `offset-headings-recursive="false"` applies the offset to that heading alone.
 
 `offset-headings-depth` bounds the reach: with `1`, only descendants within one level of the attributed heading's original level inherit it, and anything deeper gets the document offset alone.
