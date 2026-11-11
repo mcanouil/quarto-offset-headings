@@ -81,23 +81,35 @@ Written deeper than the heading above, so the cascade reaches it, and it is rend
 Written at level two, the same level as the attributed heading above.
 A cascade stops at the first heading back at that level, so this one keeps level two.
 
-## A cascade around a div {offset-headings-by="1"}
+## A cascade around a callout {offset-headings-by="1"}
 
-Written as `## A cascade around a div {offset-headings-by="1"}`, with the cascade left on.
+Written as `## A cascade around a callout {offset-headings-by="1"}`, with the cascade left on.
 
-::: {.cascade-scope}
+::: {.callout-note title="A nested block"}
 
-## Inside the div
+This callout is a nested block, so it has its own cascade scope.
+It holds a div, which is a nested block too.
 
-Written at level two inside a div, and rendered at level two.
-This heading is at the level of the attributed heading, so it stops the cascade, but only inside the div.
+::: {.inner-block}
+
+### Inherited inside the div
+
+Written at level three inside the div in the callout.
+The cascade is active when the callout starts, so this heading is rendered at level four, one level deeper and no more.
 
 :::
 
-### After the div
+## Inside the callout
 
-Written at level three after the div.
-The cascade outside the div is still active, so this heading is rendered at level four.
+Written at level two inside the callout, and rendered at level two.
+This heading is at the level of the attributed heading, so it stops the cascade, but only inside the callout.
+
+:::
+
+### After the callout
+
+Written at level three after the callout.
+The cascade outside the callout is still active, so this heading is rendered at level four.
 
 ## Shifting the whole document
 
