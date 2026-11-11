@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- fix: Give each nested block, such as a div, a `.notes` div or a block quote, its own cascade scope. A heading inside it no longer stops the cascade for the headings that come after the block. (#34)
+
 ## 0.5.1 (2026-09-23)
 
 ### Bug Fixes
