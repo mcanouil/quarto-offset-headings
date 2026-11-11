@@ -81,6 +81,24 @@ Written deeper than the heading above, so the cascade reaches it, and it is rend
 Written at level two, the same level as the attributed heading above.
 A cascade stops at the first heading back at that level, so this one keeps level two.
 
+## A cascade around a div {offset-headings-by="1"}
+
+Written as `## A cascade around a div {offset-headings-by="1"}`, with the cascade left on.
+
+::: {.cascade-scope}
+
+## Inside the div
+
+Written at level two inside a div.
+This heading is at the level of the attributed heading, so it stops the cascade, but only inside the div.
+
+:::
+
+### After the div
+
+Written at level three after the div.
+The cascade outside the div is still active, so this heading is rendered at level four.
+
 ## Shifting the whole document
 
 Rather than annotating each heading, set one offset for all of them:
