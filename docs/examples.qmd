@@ -89,7 +89,7 @@ Written as `## A cascade around a div {offset-headings-by="1"}`, with the cascad
 
 ## Inside the div
 
-Written at level two inside a div.
+Written at level two inside a div, and rendered at level two.
 This heading is at the level of the attributed heading, so it stops the cascade, but only inside the div.
 
 :::

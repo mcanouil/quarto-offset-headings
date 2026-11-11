@@ -63,8 +63,10 @@
 ---       document-level `recursive` option): when true, every following
 ---       descendant heading (deeper than this heading's original level)
 ---       receives the same offset. Cascading stops as soon as a heading at or
----       above the base level is encountered. When false, only the heading
----       carrying the attribute is offset.
+---       above the base level is encountered. A nested block, such as a div
+---       or a block quote, has its own cascade scope: a heading inside it can
+---       start or stop a cascade only inside the block. When false, only the
+---       heading carrying the attribute is offset.
 ---
 ---     - `offset-headings-max-level` (integer, optional, defaults to the
 ---       document-level `max-level` option): caps the combined heading level
