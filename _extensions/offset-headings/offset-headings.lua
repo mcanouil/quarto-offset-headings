@@ -302,24 +302,17 @@ end
 --- @param doc pandoc.Pandoc The full document.
 --- @return pandoc.Pandoc The document with heading levels adjusted.
 local function process_pandoc(doc)
-  --- Stop the active cascade, clearing all of its tracked state.
-  --- @param cascade table The cascade state to clear.
-  local function clear_cascade(cascade)
-    cascade.offset = nil
-    cascade.base_level = nil
-    cascade.max_level = nil
-    cascade.depth = nil
-  end
-
   --- Quarto decides its automatic shift from the source heading levels, so
   --- they are tracked here before any offset is applied.
   local has_heading = false
   local has_level_one = false
 
-  --- Offset one heading and update the cascade state of its scope.
+  --- Offset one heading and give the cascade that applies after it.
+  --- A cascade is never changed in place: a new one replaces it.
   --- @param header pandoc.Header The heading to offset.
-  --- @param cascade table The cascade state of the scope that holds the heading.
+  --- @param cascade table|nil The active cascade, or nil when none is active.
   --- @return pandoc.Header The heading with its level adjusted.
+  --- @return table|nil The cascade that applies to the headings after this one.
   local function offset_header(header, cascade)
     local original_level = header.level
     has_heading = true
@@ -387,67 +380,65 @@ local function process_pandoc(doc)
         -- checker:attributes call above; no extension-side echo is added
         -- here.
         header.level = clamp_level(original_level + document_offset)
-        clear_cascade(cascade)
+        cascade = nil
       else
         header.level = clamp_level_to_max(original_level + document_offset + offset, max_level)
         if recursive then
-          cascade.offset = offset
-          cascade.base_level = original_level
-          cascade.max_level = max_level
-          cascade.depth = depth
+          cascade = {
+            offset = offset,
+            base_level = original_level,
+            max_level = max_level,
+            depth = depth,
+          }
         else
-          clear_cascade(cascade)
+          cascade = nil
         end
       end
-    elseif cascade.offset ~= nil and original_level <= cascade.base_level then
+    elseif cascade ~= nil and original_level <= cascade.base_level then
       -- Sibling or ancestor: stop cascading and apply only the document offset.
-      clear_cascade(cascade)
+      cascade = nil
       header.level = clamp_level(original_level + document_offset)
-    elseif cascade.offset ~= nil
+    elseif cascade ~= nil
       and cascade.depth ~= UNLIMITED_CASCADE_DEPTH
       and (original_level - cascade.base_level) > cascade.depth then
       -- Deeper than the cascade depth limit: apply only the document offset.
       header.level = clamp_level(original_level + document_offset)
-    elseif cascade.offset ~= nil then
+    elseif cascade ~= nil then
       -- Descendant within the active cascade: apply document and cascade offsets.
       header.level = clamp_level_to_max(original_level + document_offset + cascade.offset, cascade.max_level)
     else
       header.level = clamp_level(original_level + document_offset)
     end
 
-    return header
+    return header, cascade
   end
 
   --- Offset the headings of a block list in reading order.
   --- Each nested block list, such as the content of a div, a block quote or a
-  --- list item, works on a copy of the cascade state of its parent. A heading
+  --- list item, starts with the cascade that is active at the block. A heading
   --- inside it can inherit, start or stop a cascade, but the change does not
   --- leak out to the headings that follow the nested block.
   --- @param blocks pandoc.Blocks The block list to process.
-  --- @param cascade table The cascade state of the scope that holds the blocks.
+  --- @param cascade table|nil The active cascade, or nil when none is active.
   --- @return pandoc.Blocks The block list with heading levels adjusted.
   local function process_blocks(blocks, cascade)
+    local nested_filter = {
+      traverse = 'topdown',
+      Blocks = function(nested)
+        return process_blocks(nested, cascade), false
+      end,
+    }
     for index, block in ipairs(blocks) do
       if block.t == 'Header' then
-        blocks[index] = offset_header(block, cascade)
+        blocks[index], cascade = offset_header(block, cascade)
       else
-        blocks[index] = block:walk({
-          traverse = 'topdown',
-          Blocks = function(nested)
-            return process_blocks(nested, {
-              offset = cascade.offset,
-              base_level = cascade.base_level,
-              max_level = cascade.max_level,
-              depth = cascade.depth,
-            }), false
-          end,
-        })
+        blocks[index] = block:walk(nested_filter)
       end
     end
     return blocks
   end
 
-  doc.blocks = process_blocks(doc.blocks, {})
+  doc.blocks = process_blocks(doc.blocks, nil)
 
   if document_quarto_shift_warning
     and has_heading and not has_level_one
