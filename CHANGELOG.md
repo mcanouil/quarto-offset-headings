@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- feat: Headings have no upper level unless `max-level` is set, so a heading can go deeper than six, and a format can style it. Set `max-level: 6` to keep the old cap, which now applies to every heading.
+- feat: Headings have no upper level unless `max-level` is set, so a heading can go deeper than six and a format can style it. A `max-level` now caps every heading, including those moved only by `by`, and `offset-headings-max-level` can only tighten it. Set `max-level: 6` to keep the old cap.
 
 ## 0.5.2 (2026-11-17)
 

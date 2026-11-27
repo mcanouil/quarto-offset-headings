@@ -43,7 +43,7 @@ extensions:
 | --- | --- | --- | --- |
 | `offset-headings-by` | integer | `0` | Offset added to this heading. Positive pushes it deeper, negative pulls it up. |
 | `offset-headings-recursive` | boolean | `recursive` | Whether the offset cascades to the headings nested below this one. |
-| `offset-headings-max-level` | integer | `max-level` | Caps the combined level of this heading and anything the cascade reaches. |
+| `offset-headings-max-level` | integer | `max-level` | Caps the combined level of this heading and anything the cascade reaches. It can only tighten `max-level`. |
 | `offset-headings-depth` | integer | `depth` | How many descendant levels inherit the cascade. `0` is unlimited. |
 
 : Attributes accepted on any heading. {.striped .hover tbl-colwidths="[27,11,13,49]"}

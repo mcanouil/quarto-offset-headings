@@ -74,8 +74,8 @@
 ---     - `offset-headings-max-level` (integer, optional, defaults to the
 ---       document-level `max-level` option): caps the combined heading level
 ---       (document offset + this heading's offset), and of the headings its
----       cascade reaches. A value below 1 is clamped to 1 and a warning is
----       emitted.
+---       cascade reaches. It can only tighten the document `max-level`, never
+---       go deeper. A value below 1 is clamped to 1 and a warning is emitted.
 ---
 ---     - `offset-headings-depth` (integer, optional, defaults to the
 ---       document-level `depth` option): bounds how many descendant heading
@@ -154,20 +154,15 @@ local document_cascade_depth = UNLIMITED_CASCADE_DEPTH
 --- Whether to warn when Quarto's automatic heading shift can apply.
 local document_quarto_shift_warning = true
 
---- Clamp a heading level to the range [1, max].
+--- Clamp a heading level to at least 1, and to at most `max` when it is set.
 --- @param level number The desired heading level.
 --- @param max number|nil The deepest level allowed, or nil for no cap.
---- @return number The level clamped to [MIN_LEVEL, max].
-local function clamp_level_to_max(level, max)
-  return math.max(MIN_LEVEL, math.min(max or level, level))
-end
-
---- Clamp a heading level to the range [1, max-level], or to 1 and deeper when
---- the document sets no cap.
---- @param level number The desired heading level.
 --- @return number The clamped level.
-local function clamp_level(level)
-  return clamp_level_to_max(level, document_max_level)
+local function clamp_level(level, max)
+  if max ~= nil then
+    level = math.min(level, max)
+  end
+  return math.max(MIN_LEVEL, level)
 end
 
 --- Extract the per-heading offset from the element's resolved attributes.
@@ -361,6 +356,9 @@ local function process_pandoc(doc)
         local resolved_max_level = resolved[MAX_LEVEL_ATTRIBUTE]
         if type(resolved_max_level) == 'number' then
           max_level = clamp_max_level_with_warning(resolved_max_level, MAX_LEVEL_ATTRIBUTE)
+          if document_max_level ~= nil then
+            max_level = math.min(max_level, document_max_level)
+          end
         end
       end
       header.attributes[MAX_LEVEL_ATTRIBUTE] = nil
@@ -381,10 +379,10 @@ local function process_pandoc(doc)
         -- A value the schema rejects is named once, by the
         -- checker:attributes call above; no extension-side echo is added
         -- here.
-        header.level = clamp_level(original_level + document_offset)
+        header.level = clamp_level(original_level + document_offset, document_max_level)
         cascade = nil
       else
-        header.level = clamp_level_to_max(original_level + document_offset + offset, max_level)
+        header.level = clamp_level(original_level + document_offset + offset, max_level)
         if recursive then
           cascade = {
             offset = offset,
@@ -399,17 +397,17 @@ local function process_pandoc(doc)
     elseif cascade ~= nil and original_level <= cascade.base_level then
       -- Sibling or ancestor: stop cascading and apply only the document offset.
       cascade = nil
-      header.level = clamp_level(original_level + document_offset)
+      header.level = clamp_level(original_level + document_offset, document_max_level)
     elseif cascade ~= nil
       and cascade.depth ~= UNLIMITED_CASCADE_DEPTH
       and (original_level - cascade.base_level) > cascade.depth then
       -- Deeper than the cascade depth limit: apply only the document offset.
-      header.level = clamp_level(original_level + document_offset)
+      header.level = clamp_level(original_level + document_offset, document_max_level)
     elseif cascade ~= nil then
       -- Descendant within the active cascade: apply document and cascade offsets.
-      header.level = clamp_level_to_max(original_level + document_offset + cascade.offset, cascade.max_level)
+      header.level = clamp_level(original_level + document_offset + cascade.offset, cascade.max_level)
     else
-      header.level = clamp_level(original_level + document_offset)
+      header.level = clamp_level(original_level + document_offset, document_max_level)
     end
 
     return header, cascade

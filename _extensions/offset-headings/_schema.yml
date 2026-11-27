@@ -64,7 +64,7 @@ attributes:
       type: integer
       minimum: 1
       title: Maximum target level
-      description: "Caps the combined heading level (document offset + this heading's offset) of this heading and of the headings its cascade reaches. A value below 1 is clamped to 1 and a warning is emitted. Defaults to the document-level max-level option; with neither set, there is no cap."
+      description: "Caps the combined heading level (document offset + this heading's offset) of this heading and of the headings its cascade reaches, and can only tighten the document max-level. A value below 1 is clamped to 1 and a warning is emitted. Defaults to the document-level max-level option; with neither set, there is no cap."
       examples:
         - 4
         - 6
