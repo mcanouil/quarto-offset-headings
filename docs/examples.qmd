@@ -58,15 +58,16 @@ A negative offset pulls a heading towards the top of the document.
 
 Written as `## Held at level one {offset-headings-by="-3"}`.
 
-Two minus three is minus one, and level one is the top of the range.
-The heading stops there, and the filter stays silent, because the range one to six is a limit rather than a mistake.
+Two minus three is minus one, and level one is the top of the document.
+The heading stops there, and the filter stays silent, because level one is a limit rather than a mistake.
 
-## Held at level six {offset-headings-by="5"}
+## Past level six {offset-headings-by="5"}
 
-Written as `## Held at level six {offset-headings-by="5"}`.
+Written as `## Past level six {offset-headings-by="5"}`.
 
-Two plus five is seven, and level six is the bottom of the range.
-The heading stops there, again with no message.
+Two plus five is seven, and the heading goes there, because no `max-level` is set.
+HTML has no level seven heading, so Pandoc writes it as a paragraph with the `heading` class.
+Set `max-level: 6` to keep every heading at level six or above.
 
 ## Where a cascade stops {offset-headings-by="1"}
 
@@ -145,7 +146,7 @@ See the [Reference](reference.qmd#document-options) for the full list.
 ## When the filter warns
 
 Most corrections are silent.
-The clamp to the range one to six is one of them, as the headings held at level one and at level six show.
+The clamp at level one is one of them, as the heading held at level one shows.
 
 The snippets below are quoted rather than rendered, so this page stays free of the messages they produce.
 
@@ -160,23 +161,23 @@ The heading then keeps the document offset alone, and it starts no cascade:
 (W) [offset-headings] Header.offset-headings-by: must be of type "integer", got "string".
 ```
 
-A `max-level` outside the range one to six is named twice.
+A `max-level` below one is named twice.
 The schema names the value, and the filter names the level it settles on:
 
 ```markdown
-## Section {offset-headings-by="3" offset-headings-max-level="8"}
+## Section {offset-headings-by="3" offset-headings-max-level="0"}
 ```
 
 ```text
-(W) [offset-headings] Header.offset-headings-max-level: must be at most 6, got 8.
-(W) [offset-headings] Clamping "offset-headings-max-level" value 8 to 6 (must be in the range [1, 6]).
+(W) [offset-headings] Header.offset-headings-max-level: must be at least 1, got 0.
+(W) [offset-headings] Clamping "offset-headings-max-level" value 0 to 1 (must be at least 1).
 ```
 
 The same pair follows the `max-level` document option, where the schema reports an error rather than a warning:
 
 ```text
-(E) [offset-headings] max-level: must be at most 6, got 8.
-(W) [offset-headings] Clamping "max-level" value 8 to 6 (must be in the range [1, 6]).
+(E) [offset-headings] max-level: must be at least 1, got 0.
+(W) [offset-headings] Clamping "max-level" value 0 to 1 (must be at least 1).
 ```
 
 The render finishes in every case.
