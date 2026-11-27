@@ -25,6 +25,7 @@ filters:
 extensions:
   offset-headings:
     by: 1
+    max-level: 5
     quarto-shift-warning: false
 ---
 
@@ -65,3 +66,17 @@ The cap holds it at level 4.
 
 This level-4 heading is beyond the per-heading cascade depth.
 It only receives the document offset and renders as level 5.
+
+## Document Cap
+
+This level-2 heading has no attribute and renders as level 3.
+
+##### Written Below the Cap
+
+This level-5 heading has no attribute and starts no cascade.
+The document offset would make it level 6, but the document `max-level` of `5` holds it at level 5.
+
+## Heading Cap Deeper Than the Document Cap {offset-headings-by="4" offset-headings-max-level="6"}
+
+Without any cap, this level-2 heading would become level 7 (`2 + 1 + 4`).
+Its own cap of `6` cannot go past the document `max-level` of `5`, so it renders as level 5.

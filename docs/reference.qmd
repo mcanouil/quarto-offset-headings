@@ -60,8 +60,9 @@ The result is never below one.
 It is capped at `offset-headings-max-level` for a heading that writes it and for the headings its cascade reaches, and at `max-level` for every other heading.
 If neither is set, there is no upper level, so a heading can go deeper than six.
 
-HTML and PDF have heading tags for levels one to six only.
-Pandoc writes a deeper heading in HTML as a paragraph with the `heading` class, and Typst tags it as a paragraph in the PDF, so a format can style it as text.
+Formats have a limited number of heading levels.
+Pandoc writes a heading deeper than six in HTML as a paragraph with the `heading` class, and Typst tags it as a paragraph in the PDF, so a format can style it as text.
+LaTeX, which `format: pdf` uses, has five levels, so Pandoc writes a heading deeper than five there as a plain paragraph.
 To keep every heading at six or above, set `max-level: 6`.
 
 | Written | Document `by` | Attribute | Result |
@@ -147,7 +148,8 @@ extensions:
 | --- | --- |
 | The resulting level is at least one, and at most `max-level` when it is set. | Clamped. |
 | `max-level` is at least one. | Reported as an error, and the value is clamped. |
-| `by`, `max-level`, and `depth` are integers. | Reported as an error, and the option falls back to its default. |
+| `by` and `depth` are integers. | Reported as an error, and the option falls back to `0`. |
+| `max-level` is an integer. | Reported as an error, and there is no cap. |
 | `offset-headings-by` is an integer. | Warns, the heading keeps the document offset alone, and no cascade starts. |
 | `offset-headings-max-level` and `offset-headings-depth` are integers. | Warns, and the document-level option applies instead. |
 
