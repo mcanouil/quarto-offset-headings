@@ -57,7 +57,8 @@ A heading's final level is the sum of three things, then clamped:
 3. Its own `offset-headings-by`, or the offset cascading from an ancestor.
 
 The result is never below one.
-It is capped at `offset-headings-max-level` for a heading that writes it and for the headings its cascade reaches, and at `max-level` for every other heading.
+It is capped at `offset-headings-max-level` for a heading that writes it with an accepted `offset-headings-by`, and for the headings its cascade reaches.
+Every other heading, including one whose `offset-headings-by` the schema rejects, is capped at `max-level`.
 If neither is set, there is no upper level, so a heading can go deeper than six.
 
 Formats have a limited number of heading levels.
