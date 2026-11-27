@@ -326,11 +326,16 @@ local function process_pandoc(doc)
     local resolved = checker:attributes(header.attributes, 'Header') or {}
 
     local raw_offset = header.attributes[OFFSET_ATTRIBUTE]
+    local raw_recursive = header.attributes[RECURSIVE_ATTRIBUTE]
+    local raw_max_level = header.attributes[MAX_LEVEL_ATTRIBUTE]
+    local raw_cascade_depth = header.attributes[DEPTH_ATTRIBUTE]
+    header.attributes[OFFSET_ATTRIBUTE] = nil
+    header.attributes[RECURSIVE_ATTRIBUTE] = nil
+    header.attributes[MAX_LEVEL_ATTRIBUTE] = nil
+    header.attributes[DEPTH_ATTRIBUTE] = nil
 
     if raw_offset ~= nil then
       local offset = get_offset_from_resolved(resolved)
-      header.attributes[OFFSET_ATTRIBUTE] = nil
-      local raw_recursive = header.attributes[RECURSIVE_ATTRIBUTE]
       local recursive
       if raw_recursive == nil then
         recursive = document_recursive
@@ -344,9 +349,7 @@ local function process_pandoc(doc)
         -- working, not a behaviour to change.
         recursive = parse_boolean(raw_recursive)
       end
-      header.attributes[RECURSIVE_ATTRIBUTE] = nil
 
-      local raw_max_level = header.attributes[MAX_LEVEL_ATTRIBUTE]
       local max_level = document_max_level
       if raw_max_level ~= nil then
         -- A non-integer value is named once, by the checker:attributes call
@@ -361,9 +364,7 @@ local function process_pandoc(doc)
           end
         end
       end
-      header.attributes[MAX_LEVEL_ATTRIBUTE] = nil
 
-      local raw_cascade_depth = header.attributes[DEPTH_ATTRIBUTE]
       local depth = document_cascade_depth
       if raw_cascade_depth ~= nil then
         -- A value the schema rejects is named once, by the checker:attributes
@@ -373,7 +374,6 @@ local function process_pandoc(doc)
           depth = resolved_depth
         end
       end
-      header.attributes[DEPTH_ATTRIBUTE] = nil
 
       if offset == nil then
         -- A value the schema rejects is named once, by the
