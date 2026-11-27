@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- feat: Headings have no upper level unless `max-level` is set, so a format can style a heading deeper than six. Set `max-level: 6` to keep the old cap. (#36)
+- feat: `max-level` caps every heading, including headings with no offset, and `offset-headings-max-level` can only tighten it. (#36)
+
 ## 0.5.2 (2026-11-17)
 
 - fix: Give each nested block, such as a div, a `.notes` div or a block quote, its own cascade scope. A heading inside it no longer stops the cascade for the headings that come after the block. (#34)

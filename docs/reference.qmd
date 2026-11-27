@@ -18,7 +18,7 @@ extensions:
   offset-headings:
     by: 1
     recursive: true
-    max-level: 6
+    max-level: 4
     depth: 0
     quarto-shift-warning: true
 ```
@@ -27,7 +27,7 @@ extensions:
 | --- | --- | --- | --- |
 | `by` | integer | `0` | Offset added to every heading in the document. |
 | `recursive` | boolean | `true` | Whether a per-heading offset cascades, for headings that do not say. |
-| `max-level` | integer | `6` | Deepest level a heading that writes an offset, or inherits one from a cascade, may be pushed to. |
+| `max-level` | integer | none | Deepest level any heading may reach. Without it, there is no upper level. |
 | `depth` | integer | `0` | How many descendant levels inherit a cascade, for headings that do not say. `0` is unlimited. |
 | `quarto-shift-warning` | boolean | `true` | Whether to warn when Quarto's own shift can apply. |
 
@@ -43,7 +43,7 @@ extensions:
 | --- | --- | --- | --- |
 | `offset-headings-by` | integer | `0` | Offset added to this heading. Positive pushes it deeper, negative pulls it up. |
 | `offset-headings-recursive` | boolean | `recursive` | Whether the offset cascades to the headings nested below this one. |
-| `offset-headings-max-level` | integer | `max-level` | Caps the combined level of this heading and anything the cascade reaches. |
+| `offset-headings-max-level` | integer | `max-level` | Caps the combined level of this heading and anything the cascade reaches. It can only tighten `max-level`. |
 | `offset-headings-depth` | integer | `depth` | How many descendant levels inherit the cascade. `0` is unlimited. |
 
 : Attributes accepted on any heading. {.striped .hover tbl-colwidths="[27,11,13,49]"}
@@ -56,11 +56,15 @@ A heading's final level is the sum of three things, then clamped:
 2. The document offset, `by`.
 3. Its own `offset-headings-by`, or the offset cascading from an ancestor.
 
-The result is capped at `max-level`, then clamped to the range one to six.
+The result is never below one.
+It is capped at `offset-headings-max-level` for a heading that writes it with an accepted `offset-headings-by`, and for the headings its cascade reaches.
+Every other heading, including one whose `offset-headings-by` the schema rejects, is capped at `max-level`.
+If neither is set, there is no upper level, so a heading can go deeper than six.
 
-The cap applies to a heading whose `offset-headings-by` the schema accepts, and to a heading that inherits a cascade.
-A heading whose value the schema rejects escapes the cap as well.
-A heading that does neither takes the document offset and is clamped to the range one to six only, whatever `max-level` says.
+Formats have a limited number of heading levels.
+Pandoc writes a heading deeper than six in HTML as a paragraph with the `heading` class, and Typst tags it as a paragraph in the PDF, so a format can style it as text.
+LaTeX, which `format: pdf` uses, has five levels, so Pandoc writes a heading deeper than five there as a plain paragraph.
+To keep every heading at six or above, set `max-level: 6`.
 
 | Written | Document `by` | Attribute | Result |
 | --- | --- | --- | --- |
@@ -143,9 +147,10 @@ extensions:
 
 | Rule | On failure |
 | --- | --- |
-| The resulting level is between one and six. | Clamped. |
-| `max-level` is between one and six. | Reported as an error, and the value is clamped. |
-| `by`, `max-level`, and `depth` are integers. | Reported as an error, and the option falls back to its default. |
+| The resulting level is at least one, and at most `max-level` when it is set. | Clamped. |
+| `max-level` is at least one. | Reported as an error, and the value is clamped. |
+| `by` and `depth` are integers. | Reported as an error, and the option falls back to `0`. |
+| `max-level` is an integer. | Reported as an error, and there is no cap. |
 | `offset-headings-by` is an integer. | Warns, the heading keeps the document offset alone, and no cascade starts. |
 | `offset-headings-max-level` and `offset-headings-depth` are integers. | Warns, and the document-level option applies instead. |
 
@@ -158,5 +163,6 @@ Booleans read `true`, `yes`, and `1` as true, in any case; every other value is 
 
 ## Limitations
 
-- Levels cannot leave the range one to six, so a large offset saturates.
+- A level cannot go higher than one, so a large negative offset saturates.
+- A level deeper than six is not a heading in HTML or PDF. Set `max-level: 6` to avoid it.
 - Quarto's automatic shift is applied after every filter and can only be prevented at the source, as above.
