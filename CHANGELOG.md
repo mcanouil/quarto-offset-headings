@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.6.1 (2026-11-27)
+
 - fix: Strip the `offset-headings-recursive`, `offset-headings-max-level` and `offset-headings-depth` attributes from a heading that has no `offset-headings-by`, so they no longer leak into the output. (#38)
 
 ## 0.6.0 (2026-11-27)
