@@ -329,8 +329,6 @@ local function process_pandoc(doc)
     local raw_recursive = header.attributes[RECURSIVE_ATTRIBUTE]
     local raw_max_level = header.attributes[MAX_LEVEL_ATTRIBUTE]
     local raw_cascade_depth = header.attributes[DEPTH_ATTRIBUTE]
-    -- Every attribute is stripped, even on a heading without
-    -- offset-headings-by, where the companion attributes have no effect.
     header.attributes[OFFSET_ATTRIBUTE] = nil
     header.attributes[RECURSIVE_ATTRIBUTE] = nil
     header.attributes[MAX_LEVEL_ATTRIBUTE] = nil
